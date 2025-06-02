@@ -1,0 +1,12 @@
+--- STEAMODDED HEADER
+--- MOD_NAME: BluePrince
+--- MOD_ID: BPrince
+--- PREFIX: bp
+--- MOD_AUTHOR: [mathguy, smg9000]
+--- MOD_DESCRIPTION:
+--- VERSION: 0.0.0
+----------------------------------------------
+------------MOD CODE -------------------------
+
+----------------------------------------------
+------------MOD CODE END----------------------
