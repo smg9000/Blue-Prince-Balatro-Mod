@@ -1,0 +1,11 @@
+{
+    "id": "BPrince",
+    "name": "BluePrince",
+    "display_name": "BluePrince",
+    "author": ["mathguy", "SMG9000"],
+    "description": "no",
+    "prefix": "bp",
+    "main_file": "BluePrince.lua",
+    "priority": 0,
+    "version": "0.0.0",
+}
