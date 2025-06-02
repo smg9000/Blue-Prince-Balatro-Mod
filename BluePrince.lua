@@ -1,13 +1,4 @@
---- STEAMODDED HEADER
---- MOD_NAME: BluePrince
---- MOD_ID: BPrince
---- PREFIX: bp
---- MOD_AUTHOR: [mathguy, smg9000]
---- MOD_DESCRIPTION: hi
---- VERSION: 0.0.0
 
-----------------------------------------------
-------------MOD CODE -------------------------
 function G.UIDEF.active_experiment()
 
     local cause = localize(G.GAME.bp_experiment_cause, 'causes')
@@ -27,6 +18,3 @@ function G.UIDEF.active_experiment()
     return t
 end
 
-
-----------------------------------------------
-------------MOD CODE END----------------------
