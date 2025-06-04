@@ -14,11 +14,20 @@ return {
         },
         Spectral = {
 
-        }
+        },
+        Experiment = {
+            c_bp_experiment = {
+                name = "Experiment",
+                text = {
+                }
+            }
+        },
     },
     misc = {
         dictionary = {
             b_experiments = "Experiments",
+            k_experiment = "Experiment",
+            b_experiment_cards = "Experiment Cards",
         },
         v_text = {
             
@@ -47,10 +56,10 @@ return {
 
         },
         causes = {
-
+            select_blind = "When {C:attention}Blind{} is {C:attention}Selected{},"
         },
         effects = {
-
+            earn_5_dollars = "Earn {C:money}$5{}"
         }
     }
 }
