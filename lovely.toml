@@ -9,7 +9,8 @@ target = 'game.lua'
 pattern = '''chips_text = '0','''
 position = 'after'
 payload = '''bp_experiment_cause = 'none',
-bp_experiment_effect = 'none','''
+bp_experiment_effect = 'none',
+bp_prescence_check = {},'''
 match_indent = true
 
 [[patches]]
@@ -53,5 +54,289 @@ match_indent = true
 target = 'functions/state_events.lua'
 pattern = '''G.GAME.blind:set_blind(G.GAME.round_resets.blind)'''
 position = 'before'
-payload = '''if G.GAME.bp_experiment_cause == 'select_blind' then do_experiment_effect() end'''
+payload = '''if G.GAME.bp_experiment_cause == 'select_blind' then 
+    if do_pre_experiment_effect(G.GAME.bp_experiment_effect) then
+        local effect = G.GAME.bp_experiment_effect
+        G.E_MANAGER:add_event(Event({
+            trigger = 'immediate',
+            func = function()
+                do_experiment_effect(effect)
+                return true
+            end
+        }))
+    end
+end'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "functions/button_callbacks.lua"
+pattern = '''c1.area:remove_card(c1)'''
+position = "before"
+payload = '''if G.shop and (G.GAME.bp_experiment_cause == 'item_bought_lose_3') then
+    ease_dollars(-3)
+    if do_pre_experiment_effect(G.GAME.bp_experiment_effect) then
+        local effect = G.GAME.bp_experiment_effect
+        G.E_MANAGER:add_event(Event({
+            trigger = 'immediate',
+            func = function()
+                do_experiment_effect(effect)
+                return true
+            end
+        }))
+    end
+end'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = 'functions/button_callbacks.lua'
+pattern = '''draw_card(G.hand, G.play, 1, 'up', true, card, nil, true)'''
+position = 'before'
+payload = '''if ((area == G.shop_jokers) or (area == G.shop_vouchers) or (area == G.shop_booster)) and (G.GAME.bp_experiment_cause == 'item_bought_lose_3') then
+    ease_dollars(-3)
+    if do_pre_experiment_effect(G.GAME.bp_experiment_effect) then
+        local effect = G.GAME.bp_experiment_effect
+        G.E_MANAGER:add_event(Event({
+            trigger = 'immediate',
+            func = function()
+                do_experiment_effect(effect)
+                return true
+            end
+        })) 
+    end
+end'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "functions/button_callbacks.lua"
+pattern = '''G.FUNCS.skip_booster = function(e)'''
+position = "after"
+payload = '''if G.GAME.bp_experiment_cause == 'skip_booster' then
+    if do_pre_experiment_effect(G.GAME.bp_experiment_effect) then
+        local effect = G.GAME.bp_experiment_effect
+        G.E_MANAGER:add_event(Event({
+            trigger = 'immediate',
+            func = function()
+                do_experiment_effect(effect)
+                return true
+            end
+        }))
+    end
+end'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "functions/button_callbacks.lua"
+pattern = '''local _tag = e.UIBox:get_UIE_by_ID('tag_container')'''
+position = "after"
+payload = '''if _tag and (G.GAME.bp_experiment_cause == 'skip_blind') then
+    if do_pre_experiment_effect(G.GAME.bp_experiment_effect) then
+        local effect = G.GAME.bp_experiment_effect
+        G.E_MANAGER:add_event(Event({
+            trigger = 'immediate',
+            func = function()
+                do_experiment_effect(effect)
+                return true
+            end
+        }))
+    end
+end'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = 'card.lua'
+pattern = '''ease_dollars(self.sell_cost)'''
+position = 'after'
+payload = '''
+if (G.GAME.bp_experiment_cause == 'sell_joker_with_retrigger') and (self.ability.set == "Joker") then
+    local text = G.localization.descriptions.Joker[self.config.center.key].text
+    local valid = false
+    for i = 1, #text do
+        if string.find(string.lower(text[i]), "retrigger") then
+            valid = true
+            break
+        end
+    end
+    if valid then
+        if do_pre_experiment_effect(G.GAME.bp_experiment_effect) then
+            local effect = G.GAME.bp_experiment_effect
+            G.E_MANAGER:add_event(Event({
+                trigger = 'immediate',
+                func = function()
+                    do_experiment_effect(effect)
+                    return true
+                end
+            }))
+        end
+    end
+end'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = 'card.lua'
+pattern = '''function Card:use_consumeable(area, copier)'''
+position = 'after'
+payload = '''   if (G.GAME.bp_experiment_cause == 'next_5_spectral_use') and G.GAME.bp_spectral_uses_left and (G.GAME.bp_spectral_uses_left > 0) and (self.ability.set == "Spectral") then
+        G.GAME.bp_spectral_uses_left = G.GAME.bp_spectral_uses_left - 1
+        if do_pre_experiment_effect(G.GAME.bp_experiment_effect) then
+            local effect = G.GAME.bp_experiment_effect
+            G.E_MANAGER:add_event(Event({
+                trigger = 'immediate',
+                func = function()
+                    do_experiment_effect(effect)
+                    return true
+                end
+            }))
+        end
+    end'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "functions/button_callbacks.lua"
+pattern = '''G.deck:hard_set_T()'''
+position = "before"
+payload = '''if (G.GAME.bp_experiment_cause == 'randomly_each_round') and (G.GAME.current_round.random_activation == 'cash_out') then
+    G.GAME.current_round.random_this_round_active = true
+    if do_pre_experiment_effect(G.GAME.bp_experiment_effect) then
+        local effect = G.GAME.bp_experiment_effect
+        G.E_MANAGER:add_event(Event({
+            trigger = 'immediate',
+            func = function()
+                do_experiment_effect(effect)
+                return true
+            end
+        }))
+    end
+end'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "functions/button_callbacks.lua"
+pattern = '''G.CONTROLLER.locks.toggle_shop = true'''
+position = "after"
+payload = '''if G.shop and (G.GAME.bp_experiment_cause == 'randomly_each_round') and (G.GAME.current_round.random_activation == 'end_shop') then
+    if do_pre_experiment_effect(G.GAME.bp_experiment_effect) then
+        local effect = G.GAME.bp_experiment_effect
+        G.E_MANAGER:add_event(Event({
+            trigger = 'immediate',
+            func = function()
+                do_experiment_effect(effect)
+                return true
+            end
+        })) 
+    end
+end'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "functions/state_events.lua"
+pattern = '''check_for_unlock({type = 'hand_contents', cards = G.play.cards})'''
+position = "after"
+payload = '''if (G.GAME.bp_experiment_cause == 'randomly_each_round') and (((G.GAME.current_round.random_activation == 'rand_hand') and (pseudorandom('rngpick') < 0.5)) or (G.GAME.current_round.random_activation == 'first_hand')) and not G.GAME.current_round.random_this_round_active then
+    if do_pre_experiment_effect(G.GAME.bp_experiment_effect) then
+        local effect = G.GAME.bp_experiment_effect
+        G.E_MANAGER:add_event(Event({
+            trigger = 'immediate',
+            func = function()
+                do_experiment_effect(effect)
+                return true
+            end
+        }))
+    end
+end'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "functions/state_events.lua"
+pattern = '''G.FUNCS.draw_from_hand_to_discard()'''
+position = "before"
+payload = '''if (G.GAME.bp_experiment_cause == 'randomly_each_round') and not G.GAME.current_round.random_this_round_active then
+    if do_pre_experiment_effect(G.GAME.bp_experiment_effect) then
+        local effect = G.GAME.bp_experiment_effect
+        G.E_MANAGER:add_event(Event({
+            trigger = 'immediate',
+            func = function()
+                do_experiment_effect(effect)
+                return true
+            end
+        }))
+    end
+end'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "functions/state_events.lua"
+pattern = '''G.GAME.used_jokers[self.config.center.key] = true'''
+position = "after"
+payload = '''update_prescence(self.config.center.key, 1)'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "card.lua"
+pattern = '''G.GAME.used_jokers[self.config.center.key] = true'''
+position = "after"
+payload = '''update_prescence(self.config.center.key, 1)'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "card.lua"
+pattern = '''::skip_game_actions_during_remove::'''
+position = "before"
+payload = '''if not G.OVERLAY_MENU and self.config.center.key then
+    update_prescence(self.config.center.key, -1)
+end'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "card.lua"
+pattern = '''self.config.center = center'''
+position = "before"
+payload = '''if old_center and old_center.key and not initial then
+    update_prescence(old_center.key, -1)
+end'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = 'functions/common_events.lua'
+pattern = '''pool_opts = pool_opts or {}'''
+position = 'after'
+payload = '''if pool_opts.allow_duplicates then 
+    bp_ignore_prescence_cards[v.key] = true
+end'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = 'functions/misc_functions.lua'
+pattern = '''if card.config.center.set == 'Tarot' or card.config.center.set == 'Planet' then'''
+position = 'before'
+payload = '''if card.config.center.set == 'Tarot' then
+    G.E_MANAGER:add_event(Event({
+          trigger = 'immediate',
+          func = function()
+            G.E_MANAGER:add_event(Event({
+              trigger = 'immediate',
+              func = function()
+                G.GAME.last_tarot = card.config.center_key
+                return true
+              end
+            }))
+            return true
+        end
+    }))
+end'''
 match_indent = true
