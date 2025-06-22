@@ -1,5 +1,10 @@
 
+bp_force_showman = nil
+bp_force_showman2 = nil
+
 SMODS.Atlas({ key = "experiments", atlas_table = "ASSET_ATLAS", path = "Exp.png", px = 71, py = 95})
+
+SMODS.Atlas({ key = "gallery_letters", atlas_table = "ASSET_ATLAS", path = "gallery_letters.png", px = 71, py = 95})
 
 function G.UIDEF.active_experiment()
 
@@ -140,6 +145,45 @@ local experiment_causes = { 'item_bought_lose_3', 'skip_booster', 'skip_blind', 
 
 local experiment_effects = { 'earn_5_dollars', 'upgrade_3_hands', 'create_negative_immediately_experiment', 'create_joker', 'use_wheel_of_fortune', 'add_last_used_tarot_to_pool', '2_percent_probabilities', 'reroll_tags' }
 
+SMODS.DraftJoker = SMODS.Joker:extend {
+    inject = function(self)
+        SMODS.Joker.inject(self)
+        if self.bp_include_pools then
+            for i = 1, #self.bp_include_pools do
+                if not G.P_CENTER_POOLS[self.bp_include_pools[i]] then
+                    G.P_CENTER_POOLS[self.bp_include_pools[i]] = {}
+                end
+                SMODS.insert_pool(G.P_CENTER_POOLS[self.bp_include_pools[i]], self)
+                if not G['P_' .. string.upper(self.bp_include_pools[i]) .. '_RARITY_POOLS'] then
+                    G['P_' .. string.upper(self.bp_include_pools[i]) .. '_RARITY_POOLS'] = {
+                        [1] = {},
+                        [2] = {},
+                        [3] = {},
+                        [4] = {},
+                    }
+                end
+                SMODS.insert_pool(G['P_' .. string.upper(self.bp_include_pools[i]) .. '_RARITY_POOLS'][self.rarity], self)
+                local vanilla_rarities = {["Common"] = 1, ["Uncommon"] = 2, ["Rare"] = 3, ["Legendary"] = 4}
+                if vanilla_rarities[self.rarity] then
+                    SMODS.insert_pool(G['P_' .. string.upper(self.bp_include_pools[i]) .. '_RARITY_POOLS'][vanilla_rarities[self.rarity]], self)
+                end
+            end
+        end
+    end,
+    delete = function(self)
+        if self.bp_include_pools then
+            for i = 1, #self.bp_include_pools do
+                if not G.P_CENTER_POOLS[self.bp_include_pools[i]] then
+                    G.P_CENTER_POOLS[self.bp_include_pools[i]] = {}
+                end
+                SMODS.remove_pool(G.P_CENTER_POOLS[self.bp_include_pools[i]], self.key)
+            end
+        end
+        SMODS.Joker.delete(self)
+        
+    end,
+}
+
 SMODS.Consumable {
     set = 'Experiment',
     use = function(self, card, area, copier)
@@ -250,6 +294,778 @@ SMODS.Consumable {
         return true, { allow_duplicates = true }
     end
 }
+
+SMODS.DraftJoker {
+    key = 'bedroom',
+    name = "Bedroom",
+    loc_txt = {
+        name = "Bedroom",
+        text = {
+            "After this {C:attention}Joker{} is",
+            "sold, the {C:attention}next{} Joker sold",
+            "will create {C:attention}Bedroom{}", 
+            "{C:inactive}({C:attention}Bedroom{C:inactive} excluded, must have room)",
+        }
+    },
+    rarity = 1,
+    cost = 4,
+    bp_include_pools = {"Draft", "Bedroom"},
+    calculate = function(self, card, context)
+        if context.selling_self and not context.blueprint then
+            G.GAME.bp_bedroom = (G.GAME.bp_bedroom or 0) + 1
+        end
+    end
+}
+
+SMODS.DraftJoker {
+    key = 'conservatory',
+    name = "Conservatory",
+    loc_txt = {
+        name = "Conservatory",
+        text = {
+            "After each hand, Swap the{C:attention}Rarity{}",
+            "{C:attention}Pools{} of {C:attention}2{} random jokers",
+            "from the {C:attention}Rarity Pools{} of the", 
+            "{C:attention}rarities{} of the Jokers to the",
+            "{C:attention}left{} and {C:attention}right{}",
+            "{C:inactive}Last Swapped: {V:1}#1#{C:inactive}, {V:2}#2#{}"
+        }
+    },
+    rarity = 3,
+    cost = 9,
+    bp_include_pools = {"Draft", "Green"},
+    calculate = function(self, card, context)
+        local index = nil
+        for i = 1, #G.jokers.cards do
+            if G.jokers.cards[i] == card then
+                index = i
+            end
+        end
+        if ((index ~= nil) and (index ~= 1) and (index ~= #G.jokers.cards)) and context.after and not context.before and not context.blueprint then
+            bp_force_showman2 = true 
+            local common_pool = copy_table(get_current_pool('Joker', 0, nil, 'con'))
+            local uncommon_pool = copy_table(get_current_pool('Joker', 0.8, nil, 'con'))
+            local rare_pool = copy_table(get_current_pool('Joker', 0.99, nil, 'con'))
+            local legendary_pool = copy_table(get_current_pool('Joker', nil, true, 'con'))
+            bp_force_showman2 = nil
+            local pools = {common_pool, uncommon_pool, rare_pool, legendary_pool}
+            local pool1, pool2 = nil, nil
+            local key1, key2 = G.jokers.cards[index - 1].config.center.key, G.jokers.cards[index + 1].config.center.key
+            for i = 1, 4 do
+                for j = 1, #pools[i] do
+                    if pools[i][j] == key1 then
+                        pool1 = i
+                    end
+                    if pools[i][j] == key2 then
+                        pool2 = i
+                    end
+                    if (pool1 ~= nil) and (pool2 ~= nil) then
+                        break
+                    end
+                end
+                if (pool1 ~= nil) and (pool2 ~= nil) then
+                    break
+                end
+            end
+            pool1 = pool1 or G.jokers.cards[index - 1].config.center.rarity
+            pool2 = pool2 or G.jokers.cards[index + 1].config.center.rarity
+            local joker1 = pseudorandom_element(pools[pool1], pseudoseed('con_com'))
+            while joker1 == 'UNAVAILABLE' do
+                joker1 = pseudorandom_element(pools[pool1], pseudoseed('con_com'))
+            end
+            local joker2 = pseudorandom_element(pools[pool2], pseudoseed('con_unc'))
+            while joker2 == 'UNAVAILABLE' do
+                joker2 = pseudorandom_element(pools[pool2], pseudoseed('con_com'))
+            end
+            card.ability.common_joker = localize{type = 'name_text', key = joker1, set = 'Joker'}
+            card.ability.common_color = G.C.RARITY[pool1]
+            card.ability.uncommon_joker = localize{type = 'name_text', key = joker2, set = 'Joker'}
+            card.ability.uncommon_color = G.C.RARITY[pool2]
+            card:juice_up()
+            bp_add_to_pool(joker1, 'Joker', 1, (pool2 ~= 4) and pool2 or nil, (pool2 == 4))
+            bp_add_to_pool(joker1, 'Joker', -1, (pool1 ~= 4) and pool1 or nil, (pool1 == 4))
+            bp_add_to_pool(joker2, 'Joker', 1, (pool1 ~= 4) and pool1 or nil, (pool1 == 4))
+            bp_add_to_pool(joker2, 'Joker', -1, (pool2 ~= 4) and pool2 or nil, (pool2 == 4))
+            play_area_status_text(localize{type = 'name_text', key = joker1, set = 'Joker'} .. " and " .. localize{type = 'name_text', key = joker2, set = 'Joker'} .. " Swapped!")
+        end
+    end,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.common_joker or 'None', card.ability.uncommon_joker or 'None', colours = {card.ability.common_color or G.C.FILTER, card.ability.uncommon_color or G.C.FILTER}}}
+    end,
+}
+
+SMODS.DraftJoker {
+    key = 'hallway',
+    name = "Hallway",
+    loc_txt = {
+        name = "Hallway",
+        text = {
+            "{C:dark_edition}+#1#{} Joker Slot during",
+            "blinds. When {C:attention}Blind{} is",
+            "Selected, Create a {C:attention}Joker{}",
+        }
+    },
+    rarity = 2,
+    cost = 8,
+    blueprint_compat = false,
+    config = {joker_slots = 1},
+    bp_include_pools = {"Draft", "Hallway"},
+    calculate = function(self, card, context)
+        if context.end_of_round and context.main_eval and not context.blueprint then
+            G.jokers.config.card_limit = G.jokers.config.card_limit - 1
+        elseif context.setting_blind and not card.getting_sliced and not context.blueprint then
+            G.jokers.config.card_limit = G.jokers.config.card_limit + 1
+            if G.GAME.joker_buffer + #G.jokers.cards < G.jokers.config.card_limit then
+                G.GAME.joker_buffer = G.GAME.joker_buffer + 1
+                G.E_MANAGER:add_event(Event({
+                    trigger = 'immediate',
+                    func = function()
+                        local card_ = create_card('Joker', G.jokers, nil, nil, nil, nil, nil, 'hal')
+                        card_:add_to_deck()
+                        G.jokers:emplace(card_)
+                        G.GAME.joker_buffer = 0
+                        return true
+                    end
+                }))
+                card_eval_status_text(card, 'jokers', nil, nil, nil, {colour = G.C.FILTER, message = localize('k_plus_joker')})
+            end
+        end
+    end,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.joker_slots}}
+    end,
+    add_to_deck = function(self, card)
+        if G.GAME.facing_blind then
+            G.jokers.config.card_limit = G.jokers.config.card_limit + 1
+        end
+    end,
+    remove_from_deck = function(self, card)
+        if G.GAME.facing_blind then
+            G.jokers.config.card_limit = G.jokers.config.card_limit - 1
+        end
+    end,
+}
+
+SMODS.DraftJoker {
+    key = 'aquarium',
+    name = "bp_Aquarium",
+    loc_txt = {
+        name = "Aquarium",
+        text = {
+            "{C:attention}Copies{} all owned",
+            "{C:blue}Common{} {C:attention}Jokers{}",
+        }
+    },
+    bp_include_pools = {"Draft", "Blue", "Bedroom", "Red", "Hallway", "Shop", "Green", "Black"},
+    rarity = 3,
+    cost = 9,
+}
+
+SMODS.DraftJoker {
+    key = 'darkroom',
+    name = "Darkroom",
+    loc_txt = {
+        name = "Darkroom",
+        text = {
+            "{X:mult,C:white} X#1# {} Mult",
+            "{C:attention}Jokers{} in shop",
+            "are {C:attention}face down{}",
+        }
+    },
+    config = {x_mult = 3},
+    rarity = 2,
+    cost = 6,
+    bp_include_pools = {"Draft", "Red"},
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.x_mult}}
+    end,
+}
+
+SMODS.Sticker {
+    key = 'darkroomed',
+    rate = 0,
+    pos = { x = 10, y = 0 },
+    colour = HEX '97F1EF',
+    badge_colour = HEX '97F1EF',
+    should_apply = function(self, card, center, area)
+        if not next(SMODS.find_card('j_bp_darkroom')) then
+            return
+        end
+        return (area == G.shop_jokers) and (card.ability.set == 'Joker')
+    end,
+    loc_txt = {
+        name = "",
+        text = {
+            "",
+        },
+        label = ""
+    },
+}
+
+SMODS.DraftJoker {
+    key = 'gallery',
+    name = "Gallery",
+    loc_txt = {
+        name = "Gallery",
+        text = {
+            "When {C:attention}Blind{} is {C:attention}selected{}, Assign",
+            "{C:attention}5{} Jokers {C:attention}5{} letters. At {C:attention}end{} of",
+            "{C:attention}round{}, Gains {C:red}+#1#{} Mult if letters",
+            "spell {C:blue}\"THINK\"{} for all hands",
+            "this round.",
+            "{C:inactive}(Currently {C:red}+#2#{C:inactive} Mult)"
+        }
+    },
+    config = {mult = 0, mod_mult = 8, all_hands = false},
+    rarity = 2,
+    cost = 6,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.mod_mult, card.ability.mult}}
+    end,
+    bp_include_pools = {"Draft", "Blue"},
+    calculate = function(self, card, context)
+        if context.end_of_round and context.main_eval and not context.blueprint then
+            for i = 1, #G.jokers.cards do
+                G.jokers.cards[i].ability.bp_gallery_T = nil
+                G.jokers.cards[i].ability.bp_gallery_H = nil
+                G.jokers.cards[i].ability.bp_gallery_I = nil
+                G.jokers.cards[i].ability.bp_gallery_N = nil
+                G.jokers.cards[i].ability.bp_gallery_K = nil
+            end 
+            if card.ability.all_hands then
+                card.ability.mult = card.ability.mult + card.ability.mod_mult
+                return {
+                    message = localize('k_upgrade_ex'),
+                    colour = G.C.MULT
+                }
+            end
+        elseif context.setting_blind and not card.getting_sliced and not context.blueprint then
+            local pool = {}
+            card.ability.all_hands = true
+            for i = 1, #G.jokers.cards do
+                G.jokers.cards[i].ability.bp_gallery_T = nil
+                G.jokers.cards[i].ability.bp_gallery_H = nil
+                G.jokers.cards[i].ability.bp_gallery_I = nil
+                G.jokers.cards[i].ability.bp_gallery_N = nil
+                G.jokers.cards[i].ability.bp_gallery_K = nil
+                if not G.jokers.cards[i].getting_sliced then
+                    table.insert(pool, G.jokers.cards[i])
+                end
+            end
+            if #pool >= 5 then
+                local selected = {}
+                for i = 1, 5 do
+                    local card_, key_ = pseudorandom_element(pool, pseudoseed('gal'))
+                    table.insert(selected, card_)
+                    table.remove(pool, key_)
+                end
+                selected[1].ability.bp_gallery_T = true
+                selected[2].ability.bp_gallery_H = true
+                selected[3].ability.bp_gallery_I = true
+                selected[4].ability.bp_gallery_N = true
+                selected[5].ability.bp_gallery_K = true
+            else
+                card_eval_status_text(card, 'jokers', nil, nil, nil, {colour = G.C.SECONDARY_SET.Tarot, message = localize('k_nope_ex')})
+            end
+        elseif context.before and card.ability.all_hands then
+            local word = 'THINK'
+            local found = ''
+            local valid = false
+            for i = 1, #G.jokers.cards do
+                for j = 1, #word do
+                    if G.jokers.cards[i].ability['bp_gallery_' .. string.sub(word, j, j)] then
+                        found = found .. string.sub(word, j, j)
+                    end
+                end
+            end
+            if found ~= word then
+                card_eval_status_text(card, 'jokers', nil, nil, nil, {colour = G.C.RED, message = found .. '?'})
+                card.ability.all_hands = false
+            end
+        end
+    end,
+}
+
+SMODS.Sticker {
+    key = 'gallery_T',
+    rate = 0,
+    pos = { x = 0, y = 0 },
+    atlas = 'gallery_letters',
+    colour = HEX 'FFFFFF',
+    badge_colour = HEX 'FFFFFF',
+    hide_badge = true,
+    should_apply = function(self, card, center, area)
+        return false
+    end,
+    loc_txt = {
+        name = "T",
+        text = {
+            "This is",
+            "a {C:attention}T{}"
+        },
+        label = "T"
+    },
+}
+
+SMODS.Sticker {
+    key = 'gallery_H',
+    rate = 0,
+    pos = { x = 1, y = 0 },
+    atlas = 'gallery_letters',
+    colour = HEX 'FFFFFF',
+    badge_colour = HEX 'FFFFFF',
+    hide_badge = true,
+    should_apply = function(self, card, center, area)
+        return false
+    end,
+    loc_txt = {
+        name = "H",
+        text = {
+            "This is",
+            "a {C:attention}H{}"
+        },
+        label = "H"
+    },
+}
+
+SMODS.Sticker {
+    key = 'gallery_I',
+    rate = 0,
+    pos = { x = 2, y = 0 },
+    atlas = 'gallery_letters',
+    colour = HEX 'FFFFFF',
+    badge_colour = HEX 'FFFFFF',
+    hide_badge = true,
+    should_apply = function(self, card, center, area)
+        return false
+    end,
+    loc_txt = {
+        name = "I",
+        text = {
+            "This is",
+            "an {C:attention}I{}"
+        },
+        label = "I"
+    },
+}
+
+SMODS.Sticker {
+    key = 'gallery_N',
+    rate = 0,
+    pos = { x = 3, y = 0 },
+    atlas = 'gallery_letters',
+    colour = HEX 'FFFFFF',
+    badge_colour = HEX 'FFFFFF',
+    hide_badge = true,
+    should_apply = function(self, card, center, area)
+        return false
+    end,
+    loc_txt = {
+        name = "N",
+        text = {
+            "This is",
+            "a {C:attention}N{}"
+        },
+        label = "N"
+    },
+}
+
+SMODS.Sticker {
+    key = 'gallery_K',
+    rate = 0,
+    pos = { x = 4, y = 0 },
+    atlas = 'gallery_letters',
+    colour = HEX 'FFFFFF',
+    badge_colour = HEX 'FFFFFF',
+    hide_badge = true,
+    should_apply = function(self, card, center, area)
+        return false
+    end,
+    loc_txt = {
+        name = "K",
+        text = {
+            "This is",
+            "a {C:attention}K{}"
+        },
+        label = "K"
+    },
+}
+
+SMODS.DraftJoker {
+    key = 'parlor',
+    name = "Parlor",
+    loc_txt = {
+        name = "Parlor",
+        text = {
+            "When {C:attention}Blind{} is {C:attention}selected{}, Assign",
+            "{C:attention}3{} Jokers {C:attention}3{} statements, at least",
+            "{C:attention}1{} {C:green}true{}, at least {C:attention}1{} {C:red}false{}. {C:attention}1{} Joker",
+            "with a {C:attention}statement{} is {C:money}prized{}. At",
+            "end of {C:attention}round{}, If {C:attention}leftmost{}",
+            "Joker is {C:money}prized{}, Earn {C:money}$#1#{}"
+        }
+    },
+    config = {dollars = 5},
+    rarity = 1,
+    cost = 5,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.dollars}}
+    end,
+    bp_include_pools = {"Draft", "Blue"},
+    blueprint_compat = true,
+    calc_dollar_bonus = function(self, card)
+        for i = 1, #G.jokers.cards do
+            G.jokers.cards[i].ability.bp_statement = nil
+            G.jokers.cards[i].ability.bp_prize = nil
+        end
+        local money = nil
+        if card.ability.money_hit then
+            money = 5
+        end
+        return money
+    end,
+    calculate = function(self, card, context)
+        if context.end_of_round and context.main_eval and not context.blueprint then
+            if not G.jokers.cards[1] or not G.jokers.cards[1].ability.bp_prize then
+                for i = 1, #G.jokers.cards do
+                    G.jokers.cards[i].ability.bp_statement = nil
+                    G.jokers.cards[i].ability.bp_prize = nil
+                end
+                return {
+                    message = localize('k_nope_ex'),
+                    colour = G.C.SECONDARY_SET.Tarot
+                }
+            else
+                card.ability.money_hit = true
+            end
+        elseif context.setting_blind and not card.getting_sliced and not context.blueprint then
+            local pool = {}
+            card.ability.all_hands = true
+            for i = 1, #G.jokers.cards do
+                G.jokers.cards[i].ability.bp_statement = nil
+                G.jokers.cards[i].ability.bp_prize = nil
+                if not G.jokers.cards[i].getting_sliced then
+                    table.insert(pool, G.jokers.cards[i])
+                end
+            end
+            if #pool >= 3 then
+                local selected = {}
+                local keys = {}
+                for i = 1, 3 do
+                    local card_, key_ = pseudorandom_element(pool, pseudoseed('gal'))
+                    table.insert(selected, card_)
+                    table.remove(pool, key_)
+                    table.insert(keys, card_.config.center.key)
+                    card_:juice_up()
+                end
+                local game, answer = get_parlor_puzzle()
+                selected[1].ability.bp_statement = game[1].statement
+                selected[2].ability.bp_statement = game[2].statement
+                selected[3].ability.bp_statement = game[3].statement
+                selected[1].ability.bp_parlor_keys = keys
+                selected[2].ability.bp_parlor_keys = keys
+                selected[3].ability.bp_parlor_keys = keys
+                selected[answer].ability.bp_prize = true
+            else
+                card_eval_status_text(card, 'jokers', nil, nil, nil, {colour = G.C.SECONDARY_SET.Tarot, message = localize('k_nope_ex')})
+            end
+        end
+    end,
+}
+
+function rand_puzzle()
+    local formats = {
+        'prize',
+        'empty1',
+        'empty2',
+        'true2',
+        'lie2',
+        'support',
+        'accuse',
+    }
+    local boxdata = {}
+    for i = 1, 3 do
+        local format_ = formats[pseudorandom(pseudoseed('bp_prize'),1, #formats)]
+        if format_ == 'prize' then
+            table.insert(boxdata, {
+              statement = {
+                main = 'prize',
+                args = {pseudorandom(pseudoseed('bp_prize'),1, 3)}
+              },
+            })
+        elseif format_ == 'empty1' then
+            table.insert(boxdata, {
+              statement = {
+                main = 'empty',
+                args = {pseudorandom(pseudoseed('bp_prize'),1, 3)}
+              },
+            })
+        elseif format_ == 'empty2' then
+            local rand = pseudorandom(pseudoseed('bp_prize'),1, 3)
+            local set = {}
+            for j = 1, 3 do
+                if j ~= rand then
+                    table.insert(set, j)
+                end
+            end
+            table.insert(boxdata, {
+              statement = {
+                main = 'empty',
+                args = set
+              },
+            })
+        elseif format_ == 'true2' then
+            table.insert(boxdata, {
+              statement = {
+                main = 'two_true',
+                args = {}
+              },
+            })
+        elseif format_ == 'lie2' then
+            table.insert(boxdata, {
+              statement = {
+                main = 'two_false',
+                args = {}
+              },
+            })
+        elseif format_ == 'support' then
+            table.insert(boxdata, {
+              statement = {
+                main = 'truther',
+                args = {pseudorandom(pseudoseed('bp_prize'),1, 3)}
+              },
+            })
+        elseif format_ == 'accuse' then
+            table.insert(boxdata, {
+              statement = {
+                main = 'liar',
+                args = {pseudorandom(pseudoseed('bp_prize'),1, 3)}
+              },
+            })
+        elseif format_ == 'TRUE' then
+            table.insert(boxdata, {
+              statement = {
+                main = 'TRUE',
+                args = {}
+              },
+            })
+        elseif format_ == 'FALSE' then
+            table.insert(boxdata, {
+              statement = {
+                main = 'FALSE',
+                args = {}
+              },
+            })
+        end
+    end
+    for i = 1, 3 do
+        local str = ''
+        str = str .. boxdata[i].statement.main
+        for j = 1, #boxdata[i].statement.args do
+            if j == 1 then
+                str = str .. ' '
+            end
+            str = str .. tostring(boxdata[i].statement.args[j]) .. ', '
+        end
+    end
+    return boxdata
+end
+
+function verify_statement(boxdata, box, presumes)
+    local statement = boxdata[box].statement
+    if statement.main == 'prize' then
+        return (statement.args[1] == presumes.prize)
+    elseif statement.main == 'empty' then
+        for i = 1, #statement.args do
+            if (statement.args[i] == presumes.prize) then
+                return false
+            end
+        end
+        return true
+    elseif statement.main == 'two_true' then
+        local truths = 0
+        for i = 1, #boxdata do
+            if presumes[i] then
+                truths = truths + 1
+            end
+        end
+        return (truths == 2)
+    elseif statement.main == 'two_false' then
+        local lies = 0
+        for i = 1, #boxdata do
+            if not presumes[i] then
+                lies = lies + 1
+            end
+        end
+        return (lies == 2)
+    elseif statement.main == 'truther' then
+        return presumes[statement.args[1]]
+    elseif statement.main == 'liar' then
+        return not presumes[statement.args[1]]
+    elseif statement.main == 'TRUE' then
+        return true
+    elseif statement.main == 'FALSE' then
+        return false
+    end
+end
+
+function verify_statements(boxdata)
+    local states = {
+        {true, true, false, prize = 1},
+        {true, false, true, prize = 1},
+        {false, true, true, prize = 1},
+        {false, true, false, prize = 1},
+        {true, false, false, prize = 1},
+        {false, false, true, prize = 1},
+        {true, true, false, prize = 2},
+        {true, false, true, prize = 2},
+        {false, true, true, prize = 2},
+        {false, true, false, prize = 2},
+        {true, false, false, prize = 2},
+        {false, false, true, prize = 2},
+        {true, true, false, prize = 3},
+        {true, false, true, prize = 3},
+        {false, true, true, prize = 3},
+        {false, true, false, prize = 3},
+        {true, false, false, prize = 3},
+        {false, false, true, prize = 3},
+    }
+    local gem = nil
+    local valids = 0
+    for i = 1, #states do
+        local states_next = {}
+        local valid = true
+        for j = 1, 3 do
+            table.insert(states_next, verify_statement(boxdata, j, states[i]))
+            if states_next[j] ~= states[i][j] then
+                valid = false
+            end
+        end
+        if valid then
+            valids = valids + 1
+            local prizes = {false, false, false}
+            local duds = {false, false, false}
+            for j = 1, 3 do
+                if boxdata[j].statement.main == 'prize' then
+                    local place = boxdata[j].statement.args[1]
+                    if states[i][j] then
+                        prizes[place] = true
+                    else
+                        duds[place] = true
+                    end
+                elseif (boxdata[j].statement.main == 'empty') and states[i][j] then
+                    for k = 1, #boxdata[j].statement.args do
+                        local place = boxdata[j].statement.args[k]
+                        duds[place] = true
+                    end
+                elseif (boxdata[j].statement.main == 'empty') and not states[i][j] then
+                    if #boxdata[j].statement.args == 1 then
+                        local place = boxdata[j].statement.args[1]
+                        prizes[place] = true
+                    elseif #boxdata[j].statement.args == 2 then
+                        local place = nil
+                        for k = 1, 3 do
+                            if (k ~= boxdata[j].statement.args[1]) and (k ~= boxdata[j].statement.args[2]) then
+                                place = k
+                                break
+                            end
+                        end
+                        duds[place] = true
+                    end
+                end
+            end
+            local still_valid = true
+            local prize_count = 0
+            local dud_count = 0
+            for j = 1, 3 do
+                if prizes[j] and duds[j] then
+                    still_valid = false
+                elseif prizes[j] and not duds[j] then
+                    prize_count = prize_count + 1
+                elseif not prizes[j] and duds[j] then
+                    dud_count = dud_count + 1
+                end
+            end
+            if prize_count > 1 then
+                still_valid = false
+            end
+            if dud_count >= 3 then
+                still_valid = false
+            end
+            if still_valid then
+                if (prize_count == 0) and (dud_count <= 1) then
+                    return false
+                end
+                local local_gem = nil
+                if prize_count == 1 then
+                    for j = 1, 3 do
+                        if prizes[j] then
+                            local_gem = j
+                            break
+                        end
+                    end
+                elseif dud_count == 2 then
+                    for j = 1, 3 do
+                        if not duds[j] then
+                            local_gem = j
+                            break
+                        end
+                    end
+                end
+                if not gem then
+                    gem = local_gem
+                end
+                if (gem ~= local_gem) or (local_gem ~= states[i].prize) then
+                    return false
+                end
+            else
+                valids = valids - 1
+            end
+        end
+    end
+    if valids == 0 then
+        return false
+    end
+    return true, gem
+end
+
+function get_parlor_puzzle()
+    local gem_ = 2
+    local tries = 0
+    local puzzle = nil
+    while tries < 100 do
+        tries = tries + 1
+        puzzle = rand_puzzle()
+        local valid, gem = verify_statements(puzzle)
+        if valid then
+            gem_ = gem
+            break
+        end
+    end
+    if not puzzle then
+        puzzle = {
+            {
+                statement = {
+                    main = 'prize',
+                    args = {1}
+                },
+            },
+            {
+                statement = {
+                    main = 'two_false',
+                    args = {}
+                },
+            },
+            {
+                statement = {
+                    main = 'prize',
+                    args = {3}
+                },
+            },
+        }
+    end
+    return puzzle, gem_
+end
 
 function do_pre_experiment_effect(effect)
     if effect == 'upgrade_3_hands' then
@@ -456,13 +1272,12 @@ function SMODS.current_mod.reset_game_globals(run_start)
     G.GAME.current_round.random_activation = pseudorandom_element(pool, pseudoseed('round'))
 end
 
-bp_force_showman = nil
 bp_ignore_prescence_cards = {}
 bp_pool_rarity = nil
 
 local old_showman = SMODS.showman
 function SMODS.showman(card_key)
-    if bp_force_showman then
+    if bp_force_showman or bp_force_showman2 then
         return true
     end
     return old_showman(card_key)
@@ -475,6 +1290,26 @@ function SMODS.poll_rarity(_pool_key, _rand_key)
     return result
 end
 
+local old_indiv_effect = SMODS.calculate_individual_effect
+function SMODS.calculate_individual_effect(effect, scored_card, key, amount, from_edition)
+    local result_main = old_indiv_effect(effect, scored_card, key, amount, from_edition)
+
+    if (key == 'bp_extras') and amount and (#amount > 0) then
+        local result = nil
+        for i = 1, #amount do
+            local part = SMODS.calculate_effect(amount[i], scored_card)
+            if part == true then
+                result = true
+            end
+        end
+        return result
+    end
+
+    return result_main
+end
+
+table.insert(SMODS.calculation_keys, 'bp_extras')
+
 local old_pool = get_current_pool
 function get_current_pool(_type, _rarity, _legendary, _append)
     bp_force_showman = true 
@@ -482,6 +1317,9 @@ function get_current_pool(_type, _rarity, _legendary, _append)
     bp_pool_rarity = nil
     local pool, key = old_pool(_type, _rarity, _legendary, _append)
     bp_force_showman = nil
+    if _legendary and (_type == 'Joker') then
+        bp_pool_rarity = nil
+    end
     local pool_key = _type .. '_' .. (bp_pool_rarity or 'Common') .. (_legendary and '_leg' or '')
     if G.GAME.bp_pool_addons and G.GAME.bp_pool_addons[pool_key] then
         for i = 1, #G.GAME.bp_pool_addons[pool_key] do
@@ -517,10 +1355,18 @@ function get_current_pool(_type, _rarity, _legendary, _append)
         elseif _type == 'Planet' then pool[#pool + 1] = "c_pluto"
         elseif _type == 'Spectral' then pool[#pool + 1] = "c_incantation"
         elseif _type == 'Joker' then pool[#pool + 1] = "j_joker"
+        elseif _type == 'Draft' then pool[#pool + 1] = "j_bp_gallery"
+        elseif _type == 'Blue' then pool[#pool + 1] = "j_bp_gallery"
+        elseif _type == 'Bedroom' then pool[#pool + 1] = "j_bp_bedroom"
+        elseif _type == 'Red' then pool[#pool + 1] = "j_bp_darkroom"
+        elseif _type == 'Hallway' then pool[#pool + 1] = "j_bp_hallway"
+        elseif _type == 'Shop' then pool[#pool + 1] = "j_bp_aquarium"
+        elseif _type == 'Green' then pool[#pool + 1] = "j_bp_conservatory"
+        elseif _type == 'Black' then pool[#pool + 1] = "j_bp_aquarium"
+        elseif _type == 'Edition' then pool[#pool + 1] = "e_foil"
         elseif _type == 'Demo' then pool[#pool + 1] = "j_joker"
         elseif _type == 'Voucher' then pool[#pool + 1] = "v_blank"
         elseif _type == 'Tag' then pool[#pool + 1] = "tag_handy"
-        elseif _type == 'Edition' then pool[#pool + 1] = "e_foil"
         else pool[#pool + 1] = "j_joker"
         end
     end
@@ -528,6 +1374,11 @@ function get_current_pool(_type, _rarity, _legendary, _append)
 end
 
 function bp_add_to_pool(key, type, amount, rarity, legendary)
+    if (type == 'Joker') and G.P_CENTERS[key] and G.P_CENTERS[key].bp_include_pools then
+        for i = 1, #G.P_CENTERS[key].bp_include_pools do
+            bp_add_to_pool(key, G.P_CENTERS[key].bp_include_pools[i], amount, rarity, legendary)
+        end
+    end
     amount = amount or 1
     local pool_key = type .. '_' .. (rarity or 'Common') .. (legendary and '_leg' or '')
     if not G.GAME.bp_pool_addons then

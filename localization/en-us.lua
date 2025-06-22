@@ -4,7 +4,55 @@ return {
 
         },
         Other = {
-            
+            prize_stat = {
+                name = "Parlor",
+                text = {
+                    "{C:attention}#1#{}",
+                    "is {C:money}prized{}"
+                }
+            },
+            empty_stat = {
+                name = "Parlor",
+                text = {
+                    "{C:attention}#1#{}",
+                    "is {C:red}not{} {C:money}prized{}"
+                }
+            },
+            empty2_stat = {
+                name = "Parlor",
+                text = {
+                    "{C:attention}#1#{} and",
+                    "{C:attention}#2#{} are",
+                    "{C:red}not{} {C:money}prized{}"
+                }
+            },
+            two_true_stat = {
+                name = "Parlor",
+                text = {
+                    "Two {C:attention}Jokers{} tell",
+                    "the {C:green}truth{}"
+                }
+            },
+            two_false_stat = {
+                name = "Parlor",
+                text = {
+                    "Two {C:attention}Jokers{}",
+                    "tell {C:red}lies{}"
+                }
+            },
+            truther_stat = {
+                name = "Parlor",
+                text = {
+                    "{C:attention}#1#{} tells",
+                    "the {C:green}truth{}"
+                }
+            },
+            liar_stat = {
+                name = "Parlor",
+                text = {
+                    "{C:attention}#1#{} {C:red}lies{}",
+                }
+            },
         },
         Enhanced = {
 
@@ -55,7 +103,7 @@ return {
             sell_joker_with_retrigger = {
                 text = {
                     "When a {C:attention}Joker{} with the word", 
-                    "{C:blue}\"Retrigger\"{} is {C:attention}sold{},"
+                    "{C:blue}\"All\"{} is {C:attention}sold{},"
                 },
             },
             next_5_spectral_use = {
@@ -135,6 +183,7 @@ return {
             b_experiments = "Experiments",
             k_experiment = "Experiment",
             b_experiment_cards = "Experiment Cards",
+            k_ex_bedroom = "Bedroom!"
         },
         v_text = {
             
