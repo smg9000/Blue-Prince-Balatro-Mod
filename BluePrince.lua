@@ -6,6 +6,7 @@ SMODS.Atlas({ key = "experiments", atlas_table = "ASSET_ATLAS", path = "Exp.png"
 
 SMODS.Atlas({ key = "gallery_letters", atlas_table = "ASSET_ATLAS", path = "gallery_letters.png", px = 71, py = 95})
 
+SMODS.Atlas({ key = "bpjokers", atlas_table = "ASSET_ATLAS", path = "bpjokers.png", px = 71, py = 95})
 function G.UIDEF.active_experiment()
 
     local target = {
@@ -310,6 +311,8 @@ SMODS.DraftJoker {
             "{C:inactive}({C:attention}Bedroom{C:inactive} excluded, must have room)",
         }
     },
+    atlas = 'bpjokers',
+    pos = {x = 0, y = 0},
     rarity = 1,
     cost = 4,
     bp_include_pools = {"Draft", "Bedroom"},
@@ -334,6 +337,8 @@ SMODS.DraftJoker {
             "{C:inactive}Last Swapped: {V:1}#1#{C:inactive}, {V:2}#2#{}"
         }
     },
+    atlas = 'bpjokers',
+    pos = {x = 1, y = 0},
     rarity = 3,
     cost = 9,
     bp_include_pools = {"Draft", "Green"},
@@ -413,6 +418,8 @@ SMODS.DraftJoker {
             "Selected, Create a {C:attention}Joker{}",
         }
     },
+    atlas = 'bpjokers',
+    pos = {x = 2, y = 0},
     rarity = 2,
     cost = 8,
     blueprint_compat = false,
@@ -465,6 +472,8 @@ SMODS.DraftJoker {
         }
     },
     bp_include_pools = {"Draft", "Blue", "Bedroom", "Red", "Hallway", "Shop", "Green", "Black"},
+    atlas = 'bpjokers',
+    pos = {x = 3, y = 0},
     rarity = 3,
     cost = 9,
 }
@@ -481,6 +490,8 @@ SMODS.DraftJoker {
         }
     },
     config = {x_mult = 3},
+    atlas = 'bpjokers',
+    pos = {x = 4, y = 0},
     rarity = 2,
     cost = 6,
     bp_include_pools = {"Draft", "Red"},
@@ -525,6 +536,8 @@ SMODS.DraftJoker {
         }
     },
     config = {mult = 0, mod_mult = 8, all_hands = false},
+    atlas = 'bpjokers',
+    pos = {x = 5, y = 0},
     rarity = 2,
     cost = 6,
     loc_vars = function(self, info_queue, card)
@@ -713,6 +726,8 @@ SMODS.DraftJoker {
             "Joker is {C:money}prized{}, Earn {C:money}$#1#{}"
         }
     },
+    atlas = 'bpjokers',
+    pos = {x = 0, y = 1},
     config = {dollars = 5},
     rarity = 1,
     cost = 5,
@@ -792,6 +807,8 @@ SMODS.DraftJoker {
             "{C:attention}Joker{}",
         }
     },
+    atlas = 'bpjokers',
+    pos = {x = 1, y = 1},
     config = {dollars = 4},
     rarity = 2,
     cost = 5,
@@ -833,6 +850,8 @@ SMODS.DraftJoker {
             "{C:tarot}Emperor{}",
         }
     },
+    atlas = 'bpjokers',
+    pos = {x = 2, y = 1},
     config = {},
     rarity = 1,
     cost = 4,
