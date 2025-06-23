@@ -153,7 +153,7 @@ SMODS.DraftJoker = SMODS.Joker:extend {
                 if not G.P_CENTER_POOLS[self.bp_include_pools[i]] then
                     G.P_CENTER_POOLS[self.bp_include_pools[i]] = {}
                 end
-                SMODS.insert_pool(G.P_CENTER_POOLS[self.bp_include_pools[i]], self)
+                table.insert(G.P_CENTER_POOLS[self.bp_include_pools[i]], self)
                 if not G['P_' .. string.upper(self.bp_include_pools[i]) .. '_RARITY_POOLS'] then
                     G['P_' .. string.upper(self.bp_include_pools[i]) .. '_RARITY_POOLS'] = {
                         [1] = {},
@@ -162,11 +162,14 @@ SMODS.DraftJoker = SMODS.Joker:extend {
                         [4] = {},
                     }
                 end
-                SMODS.insert_pool(G['P_' .. string.upper(self.bp_include_pools[i]) .. '_RARITY_POOLS'][self.rarity], self)
+                table.insert(G['P_' .. string.upper(self.bp_include_pools[i]) .. '_RARITY_POOLS'][self.rarity], self)
+                table.sort(G['P_' .. string.upper(self.bp_include_pools[i]) .. '_RARITY_POOLS'][self.rarity], function (a, b) return a.order < b.order end)
                 local vanilla_rarities = {["Common"] = 1, ["Uncommon"] = 2, ["Rare"] = 3, ["Legendary"] = 4}
                 if vanilla_rarities[self.rarity] then
-                    SMODS.insert_pool(G['P_' .. string.upper(self.bp_include_pools[i]) .. '_RARITY_POOLS'][vanilla_rarities[self.rarity]], self)
+                    table.insert(G['P_' .. string.upper(self.bp_include_pools[i]) .. '_RARITY_POOLS'][vanilla_rarities[self.rarity]], self)
+                    table.sort(G['P_' .. string.upper(self.bp_include_pools[i]) .. '_RARITY_POOLS'][vanilla_rarities[self.rarity]], function (a, b) return a.order < b.order end)
                 end
+                table.sort(G.P_CENTER_POOLS[self.bp_include_pools[i]], function (a, b) return a.order < b.order end)
             end
         end
     end,
@@ -342,7 +345,7 @@ SMODS.DraftJoker {
             end
         end
         if ((index ~= nil) and (index ~= 1) and (index ~= #G.jokers.cards)) and context.after and not context.before and not context.blueprint then
-            bp_force_showman2 = true 
+            bp_force_showman2 = true
             local common_pool = copy_table(get_current_pool('Joker', 0, nil, 'con'))
             local uncommon_pool = copy_table(get_current_pool('Joker', 0.8, nil, 'con'))
             local rare_pool = copy_table(get_current_pool('Joker', 0.99, nil, 'con'))
@@ -774,6 +777,85 @@ SMODS.DraftJoker {
             else
                 card_eval_status_text(card, 'jokers', nil, nil, nil, {colour = G.C.SECONDARY_SET.Tarot, message = localize('k_nope_ex')})
             end
+        end
+    end,
+}
+
+SMODS.DraftJoker {
+    key = 'kitchen',
+    name = "Kitchen",
+    loc_txt = {
+        name = "Kitchen",
+        text = {
+            "At {C:attention}end of round{}, Lose",
+            "{C:red}-$#1#{} and create a {C:attention}Food{}",
+            "{C:attention}Joker{}",
+        }
+    },
+    config = {dollars = 4},
+    rarity = 2,
+    cost = 5,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.dollars}}
+    end,
+    bp_include_pools = {"Draft", "Shop"},
+    blueprint_compat = true,
+    calculate = function(self, card, context)
+        if context.end_of_round and context.main_eval and (G.jokers.config.card_limit > (#G.jokers.cards + G.GAME.joker_buffer)) then
+            G.GAME.joker_buffer = G.GAME.joker_buffer + 1
+            ease_dollars(-4)
+            G.E_MANAGER:add_event(Event({
+                trigger = 'immediate',
+                func = function()
+                    local card = create_card('Food', G.jokers, nil, nil, nil, nil, nil, 'kit')
+                    card:add_to_deck()
+                    G.jokers:emplace(card)
+                    G.GAME.joker_buffer = 0
+                    return true
+                end
+            }))
+            return {
+                message = '-$' .. card.ability.dollars,
+                colour = G.C.RED
+            }
+        end
+    end,
+}
+
+SMODS.DraftJoker {
+    key = 'courtyard',
+    name = "Courtyard",
+    loc_txt = {
+        name = "Courtyard",
+        text = {
+            "When {C:attention}Boss Blind{} is",
+            "selected, create {C:tarot}The{}",
+            "{C:tarot}Emperor{}",
+        }
+    },
+    config = {},
+    rarity = 1,
+    cost = 4,
+    blueprint_compat = true,
+    loc_vars = function(self, info_queue, card)
+        info_queue[#info_queue + 1] = G.P_CENTERS['c_emperor']
+        return {vars = {}}
+    end,
+    bp_include_pools = {"Draft", "Green"},
+    calculate = function(self, card, context)
+        if context.setting_blind and not card.getting_sliced and (G.consumeables.config.card_limit > (#G.consumeables.cards + G.GAME.consumeable_buffer)) and context.blind.boss then
+            G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1
+            G.E_MANAGER:add_event(Event({
+                trigger = 'immediate',
+                func = function()
+                    local card_ = create_card('Tarot', G.consumeables, nil, nil, nil, nil, 'c_emperor', 'cou')
+                    card_:add_to_deck()
+                    G.consumeables:emplace(card_)
+                    G.GAME.consumeable_buffer = 0
+                    return true
+                end
+            }))
+            card_eval_status_text(card, 'extra', nil, nil, nil, {message = localize('k_plus_tarot'), colour = G.C.PURPLE})
         end
     end,
 }
@@ -1322,7 +1404,7 @@ function get_current_pool(_type, _rarity, _legendary, _append)
     bp_pool_rarity = nil
     local pool, key = old_pool(_type, _rarity, _legendary, _append)
     bp_force_showman = nil
-    if _legendary and (_type == 'Joker') then
+    if (_legendary == true) and (_type == 'Joker') then
         bp_pool_rarity = nil
     end
     local pool_key = _type .. '_' .. (bp_pool_rarity or 'Common') .. (_legendary and '_leg' or '')
@@ -1340,11 +1422,11 @@ function get_current_pool(_type, _rarity, _legendary, _append)
                 if prescence[pool[i]] == 0 then
                     prescence[pool[i]] = nil
                 end
-                table.remove(pool, i)
+                pool[i] = 'UNAVAILABLE'
             else
                 for j = #removal, 1, -1 do
                     if removal[j] == pool[i] then
-                        table.remove(pool, i)
+                        pool[i] = 'UNAVAILABLE'
                         table.remove(removal, j)
                         break
                     end
@@ -1352,7 +1434,13 @@ function get_current_pool(_type, _rarity, _legendary, _append)
             end
         end
     end
-    if #pool == 0 then
+    local pool_size = 0
+    for i = 1, #pool do
+        if pool[i] ~= 'UNAVAILABLE' then
+            pool_size = pool_size + 1
+        end
+    end
+    if pool_size == 0 then
         pool = {}
         if SMODS.ObjectTypes[_type] and SMODS.ObjectTypes[_type].default and G.P_CENTERS[SMODS.ObjectTypes[_type].default] then
             pool[#pool+1] = SMODS.ObjectTypes[_type].default
@@ -1372,6 +1460,7 @@ function get_current_pool(_type, _rarity, _legendary, _append)
         elseif _type == 'Demo' then pool[#pool + 1] = "j_joker"
         elseif _type == 'Voucher' then pool[#pool + 1] = "v_blank"
         elseif _type == 'Tag' then pool[#pool + 1] = "tag_handy"
+        elseif _type == 'Food' then pool[#pool + 1] = "j_gros_michel"
         else pool[#pool + 1] = "j_joker"
         end
     end

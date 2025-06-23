@@ -502,7 +502,22 @@ payload = '''if v.bp_include_pools then
             G.P_CENTER_POOLS[v.bp_include_pools[i]] = {}
         end
         table.insert(G.P_CENTER_POOLS[v.bp_include_pools[i]], v)
-        bp_added_pools[v.bp_include_pools[i]] = true
+        if not G['P_' .. string.upper(v.bp_include_pools[i]) .. '_RARITY_POOLS'] then
+            G['P_' .. string.upper(v.bp_include_pools[i]) .. '_RARITY_POOLS'] = {
+                [1] = {},
+                [2] = {},
+                [3] = {},
+                [4] = {},
+            }
+        end
+        table.insert(G['P_' .. string.upper(v.bp_include_pools[i]) .. '_RARITY_POOLS'][v.rarity], v)
+        table.sort(G['P_' .. string.upper(v.bp_include_pools[i]) .. '_RARITY_POOLS'][v.rarity], function (a, b) return a.order < b.order end)
+        local vanilla_rarities = {["Common"] = 1, ["Uncommon"] = 2, ["Rare"] = 3, ["Legendary"] = 4}
+        if vanilla_rarities[v.rarity] then
+            table.insert(G['P_' .. string.upper(v.bp_include_pools[i]) .. '_RARITY_POOLS'][vanilla_rarities[v.rarity]], v)
+            table.sort(G['P_' .. string.upper(v.bp_include_pools[i]) .. '_RARITY_POOLS'][vanilla_rarities[self.rarity]], function (a, b) return a.order < b.order end)
+        end
+        table.sort(G.P_CENTER_POOLS[v.bp_include_pools[i]], function (a, b) return a.order < b.order end)
     end
 end'''
 match_indent = true
@@ -512,7 +527,14 @@ match_indent = true
 target = 'game.lua'
 pattern = '''self.P_LOCKED = {}'''
 position = 'after'
-payload = '''local bp_added_pools = {}'''
+payload = '''local bp_added_pools = {}
+G.P_CENTERS['j_gros_michel'].bp_include_pools = {"Food"}
+G.P_CENTERS['j_ice_cream'].bp_include_pools = {"Food"}
+G.P_CENTERS['j_cavendish'].bp_include_pools = {"Food"}
+G.P_CENTERS['j_diet_cola'].bp_include_pools = {"Food"}
+G.P_CENTERS['j_popcorn'].bp_include_pools = {"Food"}
+G.P_CENTERS['j_ramen'].bp_include_pools = {"Food"}
+G.P_CENTERS['j_selzer'].bp_include_pools = {"Food"}'''
 match_indent = true
 
 [[patches]]
@@ -544,4 +566,35 @@ payload = '''if card and card.ability and card.ability.bp_statement then
     end
     info_queue[#info_queue+1] = {key = key .. '_stat', set = 'Other', vars = vars} 
 end'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = 'functions/common_events.lua'
+pattern = '''elseif SMODS.ObjectTypes[_type] and SMODS.ObjectTypes[_type].rarities then'''
+position = 'before'
+payload = '''elseif (_type == "Draft") or (_type == "Blue") or (_type == "Green") or (_type == "Black") or (_type == "Red") or (_type == "Bedroom") or (_type == "Hallway") or (_type == "Shop") or (_type == "Food") then
+    _rarity = (_legendary and 4) or (type(_rarity) == "number" and ((_rarity > 0.95 and 3) or (_rarity > 0.7 and 2) or 1)) or _rarity
+    _rarity = ({Common = 1, Uncommon = 2, Rare = 3, Legendary = 4})[_rarity] or _rarity
+    local rarity = _rarity or SMODS.poll_rarity("Joker", 'rarity'..G.GAME.round_resets.ante..(_append or ''))
+
+    bp_pool_rarity = ((rarity ~= nil) and rarity) or _rarity
+    _starting_pool, _pool_key = G['P_' .. string.upper(_type) .. '_RARITY_POOLS'][rarity], _type..rarity..((not _legendary and _append) or '')  
+'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = 'functions/common_events.lua'
+pattern = '''elseif _type == 'Edition' then _pool[#_pool + 1] = "e_foil"'''
+position = 'before'
+payload = '''elseif _type == 'Draft' then _pool[#_pool + 1] = "j_bp_gallery"
+elseif _type == 'Blue' then _pool[#_pool + 1] = "j_bp_gallery"
+elseif _type == 'Bedroom' then _pool[#_pool + 1] = "j_bp_bedroom"
+elseif _type == 'Red' then _pool[#_pool + 1] = "j_bp_darkroom"
+elseif _type == 'Hallway' then _pool[#_pool + 1] = "j_bp_hallway"
+elseif _type == 'Shop' then _pool[#_pool + 1] = "j_bp_aquarium"
+elseif _type == 'Green' then _pool[#_pool + 1] = "j_bp_conservatory"
+elseif _type == 'Black' then _pool[#_pool + 1] = "j_bp_aquarium"
+elseif _type == 'Food' then _pool[#_pool + 1] = "j_gros_michel"'''
 match_indent = true
