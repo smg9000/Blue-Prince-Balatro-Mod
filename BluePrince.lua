@@ -1,3 +1,4 @@
+to_big = to_big or function(x) return x end
 
 bp_force_showman = nil
 bp_force_showman2 = nil
@@ -884,6 +885,61 @@ SMODS.DraftJoker {
     end,
 }
 
+SMODS.DraftJoker {
+    key = 'showroom',
+    name = "Showroom",
+    loc_txt = {
+        name = "Showroom",
+        text = {
+            "At end of {C:attention}shop{}, if you have",
+            "{C:money}$200{} or more, create a {C:legendary,E:1}Legendary{}",
+            "Joker, {C:red,E:2}self destruct{}, set money to",
+            "{C:money}$0{} and {C:red}ban{} {C:attention}Showroom{} this run",
+        }
+    },
+    atlas = 'bpjokers',
+    pos = {x = 3, y = 1},
+    config = {},
+    rarity = 3,
+    cost = 10,
+    blueprint_compat = true,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {}}
+    end,
+    bp_include_pools = {"Draft", "Shop"},
+    calculate = function(self, card, context)
+        if context.ending_shop and (to_big(G.GAME.dollars) >= to_big(200)) then
+            ease_dollars(-G.GAME.dollars)
+            G.E_MANAGER:add_event(Event({
+                func = function()
+                    play_sound('tarot1')
+                    card.T.r = -0.2
+                    card:juice_up(0.3, 0.4)
+                    card.states.drag.is = true
+                    card.children.center.pinch.x = true
+                    G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, blockable = false,
+                        func = function()
+                                G.jokers:remove_card(card)
+                                card:remove()
+                                card = nil
+                            return true; end})) 
+                    return true
+                end
+            }))
+            G.E_MANAGER:add_event(Event({
+                trigger = 'immediate',
+                func = function()
+                    local card_ = create_card('Joker', G.jokers, true, nil, nil, nil, nil, 'bp_sho')
+                    card_:add_to_deck()
+                    G.jokers:emplace(card_)
+                    return true
+                end
+            }))
+            G.GAME.banned_keys['j_bp_showroom'] = true
+        end
+    end,
+}
+
 function rand_puzzle()
     local formats = {
         'prize',
@@ -1434,7 +1490,9 @@ function get_current_pool(_type, _rarity, _legendary, _append)
     local pool_key = _type .. '_' .. (bp_pool_rarity or 'Common') .. (_legendary and '_leg' or '')
     if G.GAME.bp_pool_addons and G.GAME.bp_pool_addons[pool_key] then
         for i = 1, #G.GAME.bp_pool_addons[pool_key] do
-            table.insert(pool, G.GAME.bp_pool_addons[pool_key][i])
+            if not G.GAME.banned_keys[G.GAME.bp_pool_addons[pool_key][i]] then
+                table.insert(pool, G.GAME.bp_pool_addons[pool_key][i])
+            end
         end
     end
     if (_type ~= 'Enhanced') and (_type ~= 'Edition') and (_type ~= 'Demo') and (_type ~= 'Tag') then
