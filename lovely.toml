@@ -365,7 +365,7 @@ match_indent = true
 target = 'functions/common_events.lua'
 pattern = '''_starting_pool, _pool_key = G.P_JOKER_RARITY_POOLS[rarity], 'Joker'..rarity..((not _legendary and _append) or '')'''
 position = 'before'
-payload = '''bp_pool_rarity = _rarity'''
+payload = '''bp_pool_rarity = ((rarity ~= nil) and rarity) or _rarity'''
 match_indent = true
 
 [[patches]]
