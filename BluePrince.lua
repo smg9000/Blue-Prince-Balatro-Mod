@@ -603,6 +603,11 @@ SMODS.DraftJoker {
                 card_eval_status_text(card, 'jokers', nil, nil, nil, {colour = G.C.RED, message = found .. '?'})
                 card.ability.all_hands = false
             end
+        elseif context.joker_main then
+            return {
+                message = localize{type='variable',key='a_mult',vars={card.ability.mult}},
+                mult_mod = card.ability.mult
+            }
         end
     end,
 }
@@ -803,7 +808,7 @@ SMODS.DraftJoker {
         name = "Kitchen",
         text = {
             "At {C:attention}end of round{}, Lose",
-            "{C:red}-$#1#{} and create a {C:attention}Food{}",
+            "{C:red}$#1#{} and create a {C:attention}Food{}",
             "{C:attention}Joker{}",
         }
     },
@@ -1468,12 +1473,12 @@ function get_current_pool(_type, _rarity, _legendary, _append)
         elseif _type == 'Spectral' then pool[#pool + 1] = "c_incantation"
         elseif _type == 'Joker' then pool[#pool + 1] = "j_joker"
         elseif _type == 'Draft' then pool[#pool + 1] = "j_bp_gallery"
-        elseif _type == 'Blue' then pool[#pool + 1] = "j_bp_gallery"
+        elseif _type == 'Blue' then pool[#pool + 1] = "j_bp_parlor"
         elseif _type == 'Bedroom' then pool[#pool + 1] = "j_bp_bedroom"
         elseif _type == 'Red' then pool[#pool + 1] = "j_bp_darkroom"
         elseif _type == 'Hallway' then pool[#pool + 1] = "j_bp_hallway"
-        elseif _type == 'Shop' then pool[#pool + 1] = "j_bp_aquarium"
-        elseif _type == 'Green' then pool[#pool + 1] = "j_bp_conservatory"
+        elseif _type == 'Shop' then pool[#pool + 1] = "j_bp_kitchen"
+        elseif _type == 'Green' then pool[#pool + 1] = "j_bp_courtyard"
         elseif _type == 'Black' then pool[#pool + 1] = "j_bp_aquarium"
         elseif _type == 'Edition' then pool[#pool + 1] = "e_foil"
         elseif _type == 'Demo' then pool[#pool + 1] = "j_joker"
