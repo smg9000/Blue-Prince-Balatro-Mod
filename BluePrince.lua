@@ -323,7 +323,7 @@ SMODS.DraftJoker {
     loc_txt = {
         name = "Conservatory",
         text = {
-            "After each hand, Swap the{C:attention}Rarity{}",
+            "After each hand, Swap the {C:attention}Rarity{}",
             "{C:attention}Pools{} of {C:attention}2{} random jokers",
             "from the {C:attention}Rarity Pools{} of the", 
             "{C:attention}rarities{} of the Jokers to the",
@@ -347,11 +347,16 @@ SMODS.DraftJoker {
             local uncommon_pool = copy_table(get_current_pool('Joker', 0.8, nil, 'con'))
             local rare_pool = copy_table(get_current_pool('Joker', 0.99, nil, 'con'))
             local legendary_pool = copy_table(get_current_pool('Joker', nil, true, 'con'))
-            bp_force_showman2 = nil
             local pools = {common_pool, uncommon_pool, rare_pool, legendary_pool}
+            for i, j in pairs(SMODS.Rarities) do
+                if (i ~= 'Common') and (i ~= 'Uncommon') and (i ~= 'Rare') and (i ~= 'Legendary') then
+                    pools[i] = copy_table(get_current_pool('Joker', i, nil, 'con'))
+                end
+            end
+            bp_force_showman2 = nil
             local pool1, pool2 = nil, nil
             local key1, key2 = G.jokers.cards[index - 1].config.center.key, G.jokers.cards[index + 1].config.center.key
-            for i = 1, 4 do
+            for i, _ in pairs(pools) do
                 for j = 1, #pools[i] do
                     if pools[i][j] == key1 then
                         pool1 = i
