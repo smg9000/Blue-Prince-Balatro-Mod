@@ -2066,10 +2066,12 @@ function get_current_pool(_type, _rarity, _legendary, _append)
         end
     end
     local chambers = 0
-    for i = 1, #G.jokers.cards do
-        if G.jokers.cards[i] and G.jokers.cards[i].config and (G.jokers.cards[i].config.center.key == 'j_bp_chamber_of_mirrors') and not G.jokers.cards[i].debuff then
-            chambers = chambers + 1
-            break
+    if G.jokers and G.jokers.cards then
+        for i = 1, #G.jokers.cards do
+            if G.jokers.cards[i] and G.jokers.cards[i].config and (G.jokers.cards[i].config.center.key == 'j_bp_chamber_of_mirrors') and not G.jokers.cards[i].debuff then
+                chambers = chambers + 1
+                break
+            end
         end
     end
     if (_type ~= 'Joker') and (_type ~= 'Draft') and (_type ~= "Blue") and (_type ~= "Green") and (_type ~= "Black") and (_type ~= "Red") and (_type ~= "Bedroom") and (_type ~= "Hallway") and (_type ~= "Shop") and (_type ~= "Food") then
