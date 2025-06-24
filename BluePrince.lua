@@ -1420,6 +1420,29 @@ SMODS.DraftJoker {
     end,
 }
 
+
+SMODS.DraftJoker {
+    key = 'chamber_of_mirrors',
+    name = "Chamber of Mirrors",
+    loc_txt = {
+        name = "Chamber of Mirrors",
+        text = {
+            "{C:attention}Jokers{} need to be present an {C:attention}additional time{}",
+            "to be {C:red}removed{} from the {C:attention}pool{}",
+        }
+    },
+    atlas = 'bpjokers',
+    pos = {x = 0, y = 3},
+    rarity = 2,
+    cost = 6,
+    blueprint_compat = false,
+    config = {},
+    bp_include_pools = {"Draft", "BLue"}, 
+    loc_vars = function(self, info_queue, card)
+        return {vars = {}}
+    end,
+}
+
 function reset_archive_slots(shop, pack)
     if shop and ((G.GAME.bp_face_down_shop or 0) > 0) then
         G.GAME.bp_shop_face_down = {}
