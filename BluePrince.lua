@@ -332,10 +332,9 @@ SMODS.DraftJoker {
         name = "Conservatory",
         text = {
             "After each hand, Swap the {C:attention}Rarity{}",
-            "{C:attention}Pools{} of {C:attention}2{} random jokers",
-            "from the {C:attention}Rarity Pools{} of the", 
-            "{C:attention}rarities{} of the Jokers to the",
-            "{C:attention}left{} and {C:attention}right{}",
+            "{C:attention}Pools{} of {C:attention}2{} random jokers from",
+            "the {C:attention}Rarity Pools{} of the Jokers", 
+            "to the {C:attention}left{} and {C:attention}right{}",
             "{C:inactive}Last Swapped: {V:1}#1#{C:inactive}, {V:2}#2#{}"
         }
     },
