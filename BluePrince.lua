@@ -1383,10 +1383,10 @@ SMODS.DraftJoker {
 }
 
 SMODS.DraftJoker {
-    key = 'comissary',
-    name = "Comissary",
+    key = 'commissary',
+    name = "Commissary",
     loc_txt = {
-        name = "Comissary",
+        name = "Commissary",
         text = {
             "Lose {C:red}$3{} and create a {C:tarot}Tarot{}",
             "card per {C:attention}reroll{} in the shop",

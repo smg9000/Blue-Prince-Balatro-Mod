@@ -605,7 +605,7 @@ elseif _type == 'Blue' then _pool[#_pool + 1] = "j_bp_parlor"
 elseif _type == 'Bedroom' then _pool[#_pool + 1] = "j_bp_bedroom"
 elseif _type == 'Red' then _pool[#_pool + 1] = "j_bp_lavatory"
 elseif _type == 'Hallway' then _pool[#_pool + 1] = "j_bp_hallway"
-elseif _type == 'Shop' then _pool[#_pool + 1] = "j_bp_comissary"
+elseif _type == 'Shop' then _pool[#_pool + 1] = "j_bp_commissary"
 elseif _type == 'Green' then _pool[#_pool + 1] = "j_bp_courtyard"
 elseif _type == 'Black' then _pool[#_pool + 1] = "j_bp_aquarium"
 elseif _type == 'Food' then _pool[#_pool + 1] = "j_gros_michel"'''
