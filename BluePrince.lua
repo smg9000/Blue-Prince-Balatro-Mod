@@ -8,6 +8,7 @@ SMODS.Atlas({ key = "experiments", atlas_table = "ASSET_ATLAS", path = "Exp.png"
 SMODS.Atlas({ key = "gallery_letters", atlas_table = "ASSET_ATLAS", path = "gallery_letters.png", px = 71, py = 95})
 
 SMODS.Atlas({ key = "bpjokers", atlas_table = "ASSET_ATLAS", path = "bpjokers.png", px = 71, py = 95})
+
 function G.UIDEF.active_experiment()
 
     local target = {
@@ -428,9 +429,9 @@ SMODS.DraftJoker {
     bp_include_pools = {"Draft", "Hallway"},
     calculate = function(self, card, context)
         if context.end_of_round and context.main_eval and not context.blueprint then
-            G.jokers.config.card_limit = G.jokers.config.card_limit - 1
+            G.jokers.config.card_limit = G.jokers.config.card_limit - card.ability.joker_slots
         elseif context.setting_blind and not card.getting_sliced and not context.blueprint then
-            G.jokers.config.card_limit = G.jokers.config.card_limit + 1
+            G.jokers.config.card_limit = G.jokers.config.card_limit + card.ability.joker_slots
             if G.GAME.joker_buffer + #G.jokers.cards < G.jokers.config.card_limit then
                 G.GAME.joker_buffer = G.GAME.joker_buffer + 1
                 G.E_MANAGER:add_event(Event({
@@ -452,12 +453,12 @@ SMODS.DraftJoker {
     end,
     add_to_deck = function(self, card)
         if G.GAME.facing_blind then
-            G.jokers.config.card_limit = G.jokers.config.card_limit + 1
+            G.jokers.config.card_limit = G.jokers.config.card_limit + card.ability.joker_slots
         end
     end,
     remove_from_deck = function(self, card)
         if G.GAME.facing_blind then
-            G.jokers.config.card_limit = G.jokers.config.card_limit - 1
+            G.jokers.config.card_limit = G.jokers.config.card_limit - card.ability.joker_slots
         end
     end,
 }
@@ -477,6 +478,49 @@ SMODS.DraftJoker {
     pos = {x = 3, y = 0},
     rarity = 3,
     cost = 9,
+    generate_ui = function(self, info_queue, card, desc_nodes, specific_vars, full_UI_table)
+        if not card then
+            card = self:create_fake_card()
+        end
+        local set = (card and card.ability and card.ability.bp_sheltered) and 'ShelteredJoker' or
+        next(SMODS.find_card('j_bp_shelter')) and (card.area ~= G.jokers) and 'MidShelteredJoker' or
+        'Joker'
+        local target = {
+            type = 'descriptions',
+            key = self.key,
+            set = set,
+            nodes = desc_nodes,
+            AUT = full_UI_table,
+            vars =
+                specific_vars or {}
+        }
+        local res = {}
+        if self.loc_vars and type(self.loc_vars) == 'function' then
+            res = self:loc_vars(info_queue, card) or {}
+            target.vars = res.vars or target.vars
+            target.key = res.key or target.key
+            target.set = res.set or target.set
+            target.scale = res.scale
+            target.text_colour = res.text_colour
+        end
+        if desc_nodes == full_UI_table.main and not full_UI_table.name then
+            full_UI_table.name = self.set == 'Enhanced' and 'temp_value' or localize { type = 'name', set = target.set, key = res.name_key or target.key, nodes = full_UI_table.name, vars = res.name_vars or target.vars or {} }
+        elseif desc_nodes ~= full_UI_table.main and not desc_nodes.name and self.set ~= 'Enhanced' then
+            desc_nodes.name = localize{type = 'name_text', key = res.name_key or target.key, set = target.set }
+        end
+        if specific_vars and specific_vars.debuffed and not res.replace_debuff then
+            target = { type = 'other', key = 'debuffed_' ..
+            (specific_vars.playing_card and 'playing_card' or 'default'), nodes = desc_nodes, AUT = full_UI_table, }
+        end
+        if res.main_start then
+            desc_nodes[#desc_nodes + 1] = res.main_start
+        end
+        localize(target)
+        if res.main_end then
+            desc_nodes[#desc_nodes + 1] = res.main_end
+        end
+        desc_nodes.background_colour = res.background_colour
+    end
 }
 
 SMODS.DraftJoker {
@@ -499,6 +543,49 @@ SMODS.DraftJoker {
     loc_vars = function(self, info_queue, card)
         return {vars = {card.ability.x_mult}}
     end,
+    generate_ui = function(self, info_queue, card, desc_nodes, specific_vars, full_UI_table)
+        if not card then
+            card = self:create_fake_card()
+        end
+        local set = (card and card.ability and card.ability.bp_sheltered) and 'ShelteredJoker' or
+        next(SMODS.find_card('j_bp_shelter')) and (card.area ~= G.jokers) and 'MidShelteredJoker' or
+        'Joker'
+        local target = {
+            type = 'descriptions',
+            key = self.key,
+            set = set,
+            nodes = desc_nodes,
+            AUT = full_UI_table,
+            vars =
+                specific_vars or {}
+        }
+        local res = {}
+        if self.loc_vars and type(self.loc_vars) == 'function' then
+            res = self:loc_vars(info_queue, card) or {}
+            target.vars = res.vars or target.vars
+            target.key = res.key or target.key
+            target.set = res.set or target.set
+            target.scale = res.scale
+            target.text_colour = res.text_colour
+        end
+        if desc_nodes == full_UI_table.main and not full_UI_table.name then
+            full_UI_table.name = self.set == 'Enhanced' and 'temp_value' or localize { type = 'name', set = target.set, key = res.name_key or target.key, nodes = full_UI_table.name, vars = res.name_vars or target.vars or {} }
+        elseif desc_nodes ~= full_UI_table.main and not desc_nodes.name and self.set ~= 'Enhanced' then
+            desc_nodes.name = localize{type = 'name_text', key = res.name_key or target.key, set = target.set }
+        end
+        if specific_vars and specific_vars.debuffed and not res.replace_debuff then
+            target = { type = 'other', key = 'debuffed_' ..
+            (specific_vars.playing_card and 'playing_card' or 'default'), nodes = desc_nodes, AUT = full_UI_table, }
+        end
+        if res.main_start then
+            desc_nodes[#desc_nodes + 1] = res.main_start
+        end
+        localize(target)
+        if res.main_end then
+            desc_nodes[#desc_nodes + 1] = res.main_end
+        end
+        desc_nodes.background_colour = res.background_colour
+    end
 }
 
 SMODS.Sticker {
@@ -508,7 +595,14 @@ SMODS.Sticker {
     colour = HEX '97F1EF',
     badge_colour = HEX '97F1EF',
     should_apply = function(self, card, center, area)
-        if not next(SMODS.find_card('j_bp_darkroom')) then
+        local valid = false
+        for i = 1, #G.jokers.cards do
+            if G.jokers.cards[i] and G.jokers.cards[i].config and (G.jokers.cards[i].config.center.key == 'j_bp_darkroom') and not G.jokers.cards[i].debuff and not G.jokers.cards[i].ability.bp_sheltered then
+                valid = true
+                break
+            end
+        end
+        if not valid then
             return
         end
         return (area == G.shop_jokers) and (card.ability.set == 'Joker')
@@ -912,6 +1006,7 @@ SMODS.DraftJoker {
             ease_dollars(-G.GAME.dollars)
             G.E_MANAGER:add_event(Event({
                 func = function()
+                    G.GAME.dollars = to_big(0)
                     play_sound('tarot1')
                     card.T.r = -0.2
                     card:juice_up(0.3, 0.4)
@@ -939,6 +1034,458 @@ SMODS.DraftJoker {
         end
     end,
 }
+
+SMODS.DraftJoker {
+    key = 'lavatory',
+    name = "Lavatory",
+    loc_txt = {
+        name = "Lavatory",
+        text = {
+            "Does nothing",
+        }
+    },
+    atlas = 'bpjokers',
+    pos = {x = 4, y = 1},
+    config = {},
+    rarity = 1,
+    cost = 2,
+    blueprint_compat = true,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {}}
+    end,
+    bp_include_pools = {"Draft", "Red"},
+    calculate = function(self, card, context)
+        if card.ability.bp_sheltered and context.remove_playing_cards then
+            local planets_to_create = math.min(#context.removed, G.consumeables.config.card_limit - (#G.consumeables.cards + G.GAME.consumeable_buffer))
+            if planets_to_create > 0 then
+                G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + planets_to_create
+                G.E_MANAGER:add_event(Event({
+                    func = function() 
+                        for i = 1, planets_to_create do
+                            local card_ = create_card('Planet', G.consumeables, nil, nil, nil, nil, nil, 'cou')
+                            card_:add_to_deck()
+                            G.consumeables:emplace(card_)
+                            G.GAME.consumeable_buffer = 0
+                            return true
+                        end
+                        return true
+                end}))   
+                card_eval_status_text(context.blueprint_card or card, 'extra', nil, nil, nil, {message = localize('k_plus_planet'), colour = G.C.BLUE})
+            end
+        end
+    end,
+    generate_ui = function(self, info_queue, card, desc_nodes, specific_vars, full_UI_table)
+        if not card then
+            card = self:create_fake_card()
+        end
+        local set = (card and card.ability and card.ability.bp_sheltered) and 'ShelteredJoker' or
+        next(SMODS.find_card('j_bp_shelter')) and (card.area ~= G.jokers) and 'MidShelteredJoker' or
+        'Joker'
+        local target = {
+            type = 'descriptions',
+            key = self.key,
+            set = set,
+            nodes = desc_nodes,
+            AUT = full_UI_table,
+            vars =
+                specific_vars or {}
+        }
+        local res = {}
+        if self.loc_vars and type(self.loc_vars) == 'function' then
+            res = self:loc_vars(info_queue, card) or {}
+            target.vars = res.vars or target.vars
+            target.key = res.key or target.key
+            target.set = res.set or target.set
+            target.scale = res.scale
+            target.text_colour = res.text_colour
+        end
+        if desc_nodes == full_UI_table.main and not full_UI_table.name then
+            full_UI_table.name = self.set == 'Enhanced' and 'temp_value' or localize { type = 'name', set = target.set, key = res.name_key or target.key, nodes = full_UI_table.name, vars = res.name_vars or target.vars or {} }
+        elseif desc_nodes ~= full_UI_table.main and not desc_nodes.name and self.set ~= 'Enhanced' then
+            desc_nodes.name = localize{type = 'name_text', key = res.name_key or target.key, set = target.set }
+        end
+        if specific_vars and specific_vars.debuffed and not res.replace_debuff then
+            target = { type = 'other', key = 'debuffed_' ..
+            (specific_vars.playing_card and 'playing_card' or 'default'), nodes = desc_nodes, AUT = full_UI_table, }
+        end
+        if res.main_start then
+            desc_nodes[#desc_nodes + 1] = res.main_start
+        end
+        localize(target)
+        if res.main_end then
+            desc_nodes[#desc_nodes + 1] = res.main_end
+        end
+        desc_nodes.background_colour = res.background_colour
+    end
+}
+
+SMODS.DraftJoker {
+    key = 'shelter',
+    name = "Shelter",
+    loc_txt = {
+        name = "Shelter",
+        text = {
+            "Remove {C:red}negative{} effects",
+            "of the next {C:attention}#1#{} {C:redroom}Red Room{}",
+            "{C:attention}Jokers{} obtained"
+        }
+    },
+    atlas = 'bpjokers',
+    pos = {x = 5, y = 1},
+    config = {uses = 3},
+    rarity = 2,
+    cost = 6,
+    blueprint_compat = true,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.uses}}
+    end,
+    bp_include_pools = {"Draft", "Blue"},
+    calculate = function(self, card, context)
+        if context.card_added then
+            if G.localization.descriptions.ShelteredJoker[context.card.config.center.key] and not context.card.ability.bp_sheltered then
+                card.ability.uses = card.ability.uses - 1
+                context.card.ability.bp_sheltered = true
+                if context.card.config.center.key then
+                    G.GAME.bp_face_down_shop = (G.GAME.bp_face_down_shop or 0) - 1
+                end
+                if card.ability.uses <= 0 then
+                    G.E_MANAGER:add_event(Event({
+                        func = function()
+                            G.GAME.dollars = to_big(0)
+                            play_sound('tarot1')
+                            card.T.r = -0.2
+                            card:juice_up(0.3, 0.4)
+                            card.states.drag.is = true
+                            card.children.center.pinch.x = true
+                            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, blockable = false,
+                                func = function()
+                                        G.jokers:remove_card(card)
+                                        card:remove()
+                                        card = nil
+                                    return true; end})) 
+                            return true
+                        end
+                    }))
+                else
+                    card_eval_status_text(card, 'extra', nil, nil, nil, {message = tostring(card.ability.uses), colour = G.C.FILTER})
+                end
+            end
+        end
+    end,
+}
+
+SMODS.DraftJoker {
+    key = 'terrace',
+    name = "Terrace",
+    loc_txt = {
+        name = "Terrace",
+        text = {
+            "{C:greenroom}Green Room{} Jokers",
+            "in shop are {C:attention}free{}",
+        }
+    },
+    atlas = 'bpjokers',
+    pos = {x = 0, y = 2},
+    config = {},
+    rarity = 2,
+    cost = 6,
+    blueprint_compat = false,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {}}
+    end,
+    bp_include_pools = {"Draft", "Green"},
+}
+
+SMODS.DraftJoker {
+    key = 'corridor',
+    name = "Corridor",
+    loc_txt = {
+        name = "Corridor",
+        text = {
+            "Each {C:attention}shop{} has a",
+            "{C:attention}Jumbo Buffoon Pack{}",
+        }
+    },
+    atlas = 'bpjokers',
+    pos = {x = 1, y = 2},
+    rarity = 1,
+    cost = 4,
+    blueprint_compat = false,
+    config = {},
+    bp_include_pools = {"Draft", "Hallway"},
+    calculate = function(self, card, context)
+        if context.starting_shop and not context.blueprint then
+            G.GAME.force_jumbo_buffoon = true
+        end
+    end,
+    loc_vars = function(self, info_queue, card)
+        info_queue[#info_queue + 1] = G.P_CENTERS['p_buffoon_jumbo_1']
+        return {vars = {}}
+    end,
+}
+
+SMODS.DraftJoker {
+    key = 'guest_bedroom',
+    name = "Guest Bedroom",
+    loc_txt = {
+        name = "Guest Bedroom",
+        text = {
+            "{C:blue}+#1#{} hand for ",
+            "{C:attention}#2#{} rounds",
+        }
+    },
+    atlas = 'bpjokers',
+    pos = {x = 2, y = 2},
+    rarity = 1,
+    cost = 4,
+    blueprint_compat = false,
+    config = {hands = 1, rounds = 10},
+    bp_include_pools = {"Draft", "Bedroom"},
+    calculate = function(self, card, context)
+        if context.end_of_round and context.main_eval and not context.blueprint then
+            card.ability.rounds = card.ability.rounds - 1
+            if card.ability.rounds <= 0 then
+                G.E_MANAGER:add_event(Event({
+                    func = function()
+                        G.GAME.dollars = to_big(0)
+                        play_sound('tarot1')
+                        card.T.r = -0.2
+                        card:juice_up(0.3, 0.4)
+                        card.states.drag.is = true
+                        card.children.center.pinch.x = true
+                        G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, blockable = false,
+                            func = function()
+                                    G.jokers:remove_card(card)
+                                    card:remove()
+                                    card = nil
+                                return true; end})) 
+                        return true
+                    end
+                }))
+                card_eval_status_text(card, 'extra', nil, nil, nil, {message = localize('k_evicted'), colour = G.C.FILTER})
+            else
+                card_eval_status_text(card, 'extra', nil, nil, nil, {message = tostring(card.ability.rounds), colour = G.C.FILTER})
+            end
+        end
+    end,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.hands, card.ability.rounds}}
+    end,
+    add_to_deck = function(self, card)
+        G.GAME.round_resets.hands = G.GAME.round_resets.hands + card.ability.hands
+        ease_hands_played(card.ability.hands)
+    end,
+    remove_from_deck = function(self, card)
+        G.GAME.round_resets.hands = G.GAME.round_resets.hands - card.ability.hands
+        ease_hands_played(-card.ability.hands)
+    end,
+}
+
+SMODS.DraftJoker {
+    key = 'archives',
+    name = "Archives",
+    loc_txt = {
+        name = "Archives",
+        text = {
+            "{C:attention}+#1#{} card slot,",
+            "{C:attention}+1{} card in {C:attention}shop slots{}",
+            "and packs are {C:attention}face down{}"
+        }
+    },
+    atlas = 'bpjokers',
+    pos = {x = 3, y = 2},
+    rarity = 2,
+    cost = 6,
+    blueprint_compat = false,
+    config = {slots = 1},
+    bp_include_pools = {"Draft", "Red"}, 
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.slots}}
+    end,
+    add_to_deck = function(self, card)
+        change_shop_size(card.ability.slots)
+        if not card.ability.bp_sheltered then
+            G.GAME.bp_face_down_shop = (G.GAME.bp_face_down_shop or 0) + 1
+        end
+    end,
+    remove_from_deck = function(self, card)
+        change_shop_size(-card.ability.slots)
+        if not card.ability.bp_sheltered then
+            G.GAME.bp_face_down_shop = (G.GAME.bp_face_down_shop or 0) - 1
+        end
+    end,
+    generate_ui = function(self, info_queue, card, desc_nodes, specific_vars, full_UI_table)
+        if not card then
+            card = self:create_fake_card()
+        end
+        local set = (card and card.ability and card.ability.bp_sheltered) and 'ShelteredJoker' or
+        next(SMODS.find_card('j_bp_shelter')) and (card.area ~= G.jokers) and 'MidShelteredJoker' or
+        'Joker'
+        local target = {
+            type = 'descriptions',
+            key = self.key,
+            set = set,
+            nodes = desc_nodes,
+            AUT = full_UI_table,
+            vars =
+                specific_vars or {}
+        }
+        local res = {}
+        if self.loc_vars and type(self.loc_vars) == 'function' then
+            res = self:loc_vars(info_queue, card) or {}
+            target.vars = res.vars or target.vars
+            target.key = res.key or target.key
+            target.set = res.set or target.set
+            target.scale = res.scale
+            target.text_colour = res.text_colour
+        end
+        if desc_nodes == full_UI_table.main and not full_UI_table.name then
+            full_UI_table.name = self.set == 'Enhanced' and 'temp_value' or localize { type = 'name', set = target.set, key = res.name_key or target.key, nodes = full_UI_table.name, vars = res.name_vars or target.vars or {} }
+        elseif desc_nodes ~= full_UI_table.main and not desc_nodes.name and self.set ~= 'Enhanced' then
+            desc_nodes.name = localize{type = 'name_text', key = res.name_key or target.key, set = target.set }
+        end
+        if specific_vars and specific_vars.debuffed and not res.replace_debuff then
+            target = { type = 'other', key = 'debuffed_' ..
+            (specific_vars.playing_card and 'playing_card' or 'default'), nodes = desc_nodes, AUT = full_UI_table, }
+        end
+        if res.main_start then
+            desc_nodes[#desc_nodes + 1] = res.main_start
+        end
+        localize(target)
+        if res.main_end then
+            desc_nodes[#desc_nodes + 1] = res.main_end
+        end
+        desc_nodes.background_colour = res.background_colour
+    end
+}
+
+SMODS.DraftJoker {
+    key = 'servants_quarters',
+    name = "Servant's Quarters",
+    loc_txt = {
+        name = "Servant's Quarters",
+        text = {
+            "{C:red}+1{} discard per round",
+            "per owned {C:bedroom}Bedroom{}",
+            "{C:inactive}({C:red}+#1#{C:inactive} Discards Currently)"
+        }
+    },
+    atlas = 'bpjokers',
+    pos = {x = 4, y = 2},
+    rarity = 2,
+    cost = 6,
+    blueprint_compat = false,
+    config = {bedroom_tally = 0},
+    bp_include_pools = {"Draft", "Bedroom"}, 
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.bedroom_tally}}
+    end,
+}
+
+SMODS.DraftJoker {
+    key = 'comissary',
+    name = "Comissary",
+    loc_txt = {
+        name = "Comissary",
+        text = {
+            "Lose {C:red}$3{} and create a {C:tarot}Tarot{}",
+            "card per {C:attention}reroll{} in the shop",
+        }
+    },
+    atlas = 'bpjokers',
+    pos = {x = 5, y = 2},
+    rarity = 1,
+    cost = 4,
+    blueprint_compat = true,
+    config = {},
+    bp_include_pools = {"Draft", "Shop"}, 
+    loc_vars = function(self, info_queue, card)
+        return {vars = {}}
+    end,
+    calculate = function(self, card, context)
+        if context.reroll_shop and (G.consumeables.config.card_limit > (#G.consumeables.cards + G.GAME.consumeable_buffer)) then
+            G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1
+            ease_dollars(-3)
+            G.E_MANAGER:add_event(Event({
+                trigger = 'immediate',
+                func = function()
+                    local card_ = create_card('Tarot', G.consumeables, nil, nil, nil, nil, nil, 'cou')
+                    card_:add_to_deck()
+                    G.consumeables:emplace(card_)
+                    G.GAME.consumeable_buffer = 0
+                    return true
+                end
+            }))
+        end
+    end,
+}
+
+function reset_archive_slots(shop, pack)
+    if shop and ((G.GAME.bp_face_down_shop or 0) > 0) then
+        G.GAME.bp_shop_face_down = {}
+        local pool = {}
+        for i = 1, G.GAME.shop.joker_max do
+            table.insert(pool, i)
+        end
+        for i = 1, (G.GAME.bp_face_down_shop or 0) do
+            local face_down, key = pseudorandom_element(pool, pseudoseed('arc'))
+            table.remove(pool, key)
+            G.GAME.bp_shop_face_down[face_down] = true
+        end
+    end
+    if pack and ((G.GAME.bp_face_down_shop or 0) > 0) then
+        G.GAME.bp_pack_face_down = {}
+        local pool = {}
+        for i = 1, pack do
+            table.insert(pool, i)
+        end
+        for i = 1, (G.GAME.bp_face_down_shop or 0) do
+            local face_down, key = pseudorandom_element(pool, pseudoseed('arc'))
+            table.remove(pool, key)
+            G.GAME.bp_pack_face_down[face_down] = true
+        end
+    end
+    if (G.GAME.bp_face_down_shop or 0) == 0 then
+        G.GAME.bp_pack_face_down = {}
+        G.GAME.bp_shop_face_down = {}
+    end
+end
+
+function force_face_down(card)
+    if card.ability.bp_darkroomed and (card.area == G.shop_jokers) then
+        return true
+    end
+    if G.shop_jokers and (card.area == G.shop_jokers) and G.GAME.bp_shop_face_down and (card.bp_archive_cleared == nil) then
+        local index = nil
+        for i = 1, #G.shop_jokers.cards do
+            if G.shop_jokers.cards[i] == card then
+                index = i
+            end
+        end
+        if G.GAME.bp_shop_face_down[index] then
+            card.bp_archive_cleared = true
+            return true
+        end
+        if index then
+            card.bp_archive_cleared = false
+        end
+    end
+    if G.pack_cards and (card.area == G.pack_cards) and G.GAME.bp_pack_face_down and (card.bp_archive_cleared == nil) then
+        local index = nil
+        for i = 1, #G.pack_cards.cards do
+            if G.pack_cards.cards[i] == card then
+                index = i
+            end
+        end
+        if G.GAME.bp_pack_face_down[index] then
+            card.bp_archive_cleared = true
+            return true
+        end
+        if index then
+            card.bp_archive_cleared = false
+        end
+    end
+end
 
 function rand_puzzle()
     local formats = {
@@ -1533,9 +2080,9 @@ function get_current_pool(_type, _rarity, _legendary, _append)
         elseif _type == 'Draft' then pool[#pool + 1] = "j_bp_gallery"
         elseif _type == 'Blue' then pool[#pool + 1] = "j_bp_parlor"
         elseif _type == 'Bedroom' then pool[#pool + 1] = "j_bp_bedroom"
-        elseif _type == 'Red' then pool[#pool + 1] = "j_bp_darkroom"
+        elseif _type == 'Red' then pool[#pool + 1] = "j_bp_lavatory"
         elseif _type == 'Hallway' then pool[#pool + 1] = "j_bp_hallway"
-        elseif _type == 'Shop' then pool[#pool + 1] = "j_bp_kitchen"
+        elseif _type == 'Shop' then pool[#pool + 1] = "j_bp_comissary"
         elseif _type == 'Green' then pool[#pool + 1] = "j_bp_courtyard"
         elseif _type == 'Black' then pool[#pool + 1] = "j_bp_aquarium"
         elseif _type == 'Edition' then pool[#pool + 1] = "e_foil"
@@ -1547,6 +2094,17 @@ function get_current_pool(_type, _rarity, _legendary, _append)
         end
     end
     return pool, key
+end
+
+local old_get_pack = get_pack
+function get_pack(_key, _type)
+    if (_key == 'shop_pack') and G.GAME.force_jumbo_buffoon and (G.GAME.first_shop_buffoon or G.GAME.banned_keys['p_buffoon_normal_1']) then
+        if not G.GAME.banned_keys['p_buffoon_jumbo_1'] and ((_type == nil) or (_type == 'Joker')) then
+            G.GAME.force_jumbo_buffoon = nil
+            return G.P_CENTERS['p_buffoon_jumbo_1']
+        end
+    end
+    return old_get_pack(_key, _type)
 end
 
 function bp_add_to_pool(key, type, amount, rarity, legendary)

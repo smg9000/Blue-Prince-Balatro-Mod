@@ -176,6 +176,72 @@ return {
                     "{C:attention}tags{} this {C:attention}ante{}",
                 },
             },
+        },
+        MidShelteredJoker = {
+            j_bp_aquarium = {
+                name = "Aquarium",
+                text = {
+                    "{C:attention}Copies{} all owned",
+                    "{C:blue}Common{} {C:attention}Jokers{}",
+                    "{C:inactive}[]{}",
+                    "{C:red}Sheltered!{}"
+                }
+            },
+            j_bp_darkroom = {
+                name = "Darkroom",
+                text = {
+                    "{X:mult,C:white} X#1# {} Mult",
+                    "{C:inactive}[Jokers in shop{}",
+                    "{C:inactive}are face down]{}",
+                    "{C:red}Sheltered!{}"
+                }
+            },
+            j_bp_lavatory = {
+                name = "Lavatory",
+                text = {
+                    "Create a {C:planet}Planet{} card",
+                    "when a card is {C:red}destroyed{}",
+                    "{C:inactive}[Does nothing]{}",
+                    "{C:red}Sheltered!{}"
+                }
+            },
+            j_bp_archives = {
+                name = "Archives",
+                text = {
+                    "{C:attention}+#1#{} card slot,",
+                    "{C:inactive}[+1 card in shop slots]{}",
+                    "{C:inactive}[and packs are face down]{}",
+                    "{C:red}Sheltered!{}"
+                }
+            }
+        },
+        ShelteredJoker = {
+            j_bp_aquarium = {
+                name = "Aquarium",
+                text = {
+                    "{C:attention}Copies{} all owned",
+                    "{C:blue}Common{} {C:attention}Jokers{}",
+                }
+            },
+            j_bp_darkroom = {
+                name = "Darkroom",
+                text = {
+                    "{X:mult,C:white} X#1# {} Mult",
+                }
+            },
+            j_bp_lavatory = {
+                name = "Lavatory",
+                text = {
+                    "Create a {C:planet}Planet{} card",
+                    "when a {C:attention}card{} is {C:red}destroyed{}",
+                }
+            },
+            j_bp_archives = {
+                name = "Archives",
+                text = {
+                    "{C:attention}+#1#{} card slot",
+                }
+            }
         }
     },
     misc = {
@@ -183,7 +249,8 @@ return {
             b_experiments = "Experiments",
             k_experiment = "Experiment",
             b_experiment_cards = "Experiment Cards",
-            k_ex_bedroom = "Bedroom!"
+            k_ex_bedroom = "Bedroom!",
+            k_evicted = "Evicted",
         },
         v_text = {
             
