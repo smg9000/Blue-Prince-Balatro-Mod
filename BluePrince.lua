@@ -1438,9 +1438,61 @@ SMODS.DraftJoker {
     cost = 6,
     blueprint_compat = false,
     config = {},
-    bp_include_pools = {"Draft", "BLue"}, 
+    bp_include_pools = {"Draft", "Blue"}, 
     loc_vars = function(self, info_queue, card)
         return {vars = {}}
+    end,
+}
+
+SMODS.DraftJoker {
+    key = 'tunnel',
+    name = "Tunnel",
+    loc_txt = {
+        name = "Tunnel",
+        text = {
+            "When {C:attention}Obtained{}, Adds {C:attention}Tunnel{} to the",
+            "{C:attention}Joker Pool{}, adjacent {C:attention}Tunnels{} give",
+            "{X:mult,C:white} X#1# {} Mult for each {C:attention}Tunnel{}",
+            "{C:inactive}(Currently {X:mult,C:white} X#2# {C:inactive} Mult)",
+        }
+    },
+    atlas = 'bpjokers',
+    pos = {x = 1, y = 3},
+    rarity = 3,
+    cost = 8,
+    blueprint_compat = true,
+    config = {mod_x_mult = 1, tunnel_tally = 0},
+    bp_include_pools = {"Draft", "Hallway"}, 
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.mod_x_mult, 1 + (card.ability.mod_x_mult * card.ability.tunnel_tally)}}
+    end,
+    calculate = function(self, card, context)
+        if context.other_joker then
+            local index = nil
+            for i = 1, #G.jokers.cards do
+                if G.jokers.cards[i] == (context.blueprint_card) then
+                    index = i
+                end
+            end
+            if index and (card.ability.tunnel_tally >= 1) and ((context.other_joker == G.jokers.cards[index - 1]) or (context.other_joker == G.jokers.cards[index + 1])) and context.other_joker.config and (context.other_joker.config.center.key == 'j_bp_tunnel') then
+                G.E_MANAGER:add_event(Event({
+                    func = function()
+                        context.other_joker:juice_up(0.5, 0.5)
+                        return true
+                    end
+                })) 
+                return {
+                    extra = {focus = context.other_joker, message = localize{type='variable',key='a_xmult',vars={1 + (card.ability.mod_x_mult * card.ability.tunnel_tally)}}, colour = G.C.MULT, sound = 'multhit2'},
+                    Xmult_mod = 1 + (card.ability.mod_x_mult * card.ability.tunnel_tally)
+                }
+            end
+        end
+    end,
+    add_to_deck = function(self, card, from_debuff)
+        if not from_debuff then
+            bp_add_to_pool('j_bp_tunnel', 'Joker', 1, 3)
+            play_area_status_text(localize{type = 'name_text', key = 'j_bp_tunnel', set = 'Joker'} .." added to Joker Pool!")
+        end
     end,
 }
 
