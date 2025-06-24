@@ -2065,13 +2065,23 @@ function get_current_pool(_type, _rarity, _legendary, _append)
             end
         end
     end
+    local chambers = 0
+    for i = 1, #G.jokers.cards do
+        if G.jokers.cards[i] and G.jokers.cards[i].config and (G.jokers.cards[i].config.center.key == 'j_bp_chamber_of_mirrors') and not G.jokers.cards[i].debuff then
+            chambers = chambers + 1
+            break
+        end
+    end
+    if (_type ~= 'Joker') and (_type ~= 'Draft') and (_type ~= "Blue") and (_type ~= "Green") and (_type ~= "Black") and (_type ~= "Red") and (_type ~= "Bedroom") and (_type ~= "Hallway") and (_type ~= "Shop") and (_type ~= "Food") then
+        chambers = 0
+    end
     if (_type ~= 'Enhanced') and (_type ~= 'Edition') and (_type ~= 'Demo') and (_type ~= 'Tag') then
         local prescence = copy_table(G.GAME.bp_prescence or {})
         local removal = copy_table(G.GAME.bp_pool_removals and G.GAME.bp_pool_removals[pool_key] or {})
         for i = #pool, 1, -1 do
-            if prescence[pool[i]] and (prescence[pool[i]] > 0) and not (SMODS.showman(pool[i]) or bp_ignore_prescence_cards[pool[i]]) then
-                prescence[pool[i]] = prescence[pool[i]] - 1
-                if prescence[pool[i]] == 0 then
+            if prescence[pool[i]] and (prescence[pool[i]] > chambers) and not (SMODS.showman(pool[i]) or bp_ignore_prescence_cards[pool[i]]) then
+                prescence[pool[i]] = prescence[pool[i]] - 1 - chambers
+                if prescence[pool[i]] <= 0 then
                     prescence[pool[i]] = nil
                 end
                 pool[i] = 'UNAVAILABLE'
