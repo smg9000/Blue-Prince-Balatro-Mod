@@ -201,6 +201,7 @@ return {
                 text = {
                     "Create a {C:planet}Planet{} card",
                     "when a card is {C:red}destroyed{}",
+                    "{C:inactive}(must have room){}",
                     "{C:inactive}[Does nothing]{}",
                     "{C:red}Sheltered!{}"
                 }
@@ -234,6 +235,7 @@ return {
                 text = {
                     "Create a {C:planet}Planet{} card",
                     "when a {C:attention}card{} is {C:red}destroyed{}",
+                    "{C:inactive}(must have room){}"
                 }
             },
             j_bp_archives = {

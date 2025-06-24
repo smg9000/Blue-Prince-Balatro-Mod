@@ -948,6 +948,7 @@ SMODS.DraftJoker {
             "When {C:attention}Boss Blind{} is",
             "selected, create {C:tarot}The{}",
             "{C:tarot}Emperor{}",
+            "{C:inactive}(must have room){}"
         }
     },
     atlas = 'bpjokers',
@@ -1390,6 +1391,7 @@ SMODS.DraftJoker {
         text = {
             "Lose {C:red}$3{} and create a {C:tarot}Tarot{}",
             "card per {C:attention}reroll{} in the shop",
+            "{C:inactive}(must have room){}"
         }
     },
     atlas = 'bpjokers',
@@ -1420,15 +1422,15 @@ SMODS.DraftJoker {
     end,
 }
 
-
 SMODS.DraftJoker {
     key = 'chamber_of_mirrors',
     name = "Chamber of Mirrors",
     loc_txt = {
         name = "Chamber of Mirrors",
         text = {
-            "{C:attention}Jokers{} need to be present an {C:attention}additional time{}",
-            "to be {C:red}removed{} from the {C:attention}pool{}",
+            "{C:attention}Jokers{} need to be present",
+            "an {C:attention}additional time{} to be",
+            "{C:red}removed{} from the {C:attention}pool{}",
         }
     },
     atlas = 'bpjokers',
