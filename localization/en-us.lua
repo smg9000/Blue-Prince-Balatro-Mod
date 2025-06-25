@@ -176,6 +176,12 @@ return {
                     "{C:attention}tags{} this {C:attention}ante{}",
                 },
             },
+            smg_special = {
+                text = {
+                    "Add {C:attention}3 Aquariums{} to", 
+                    "the {C:attention}Joker Pool{}",
+                },
+            },
         },
         MidShelteredJoker = {
             j_bp_aquarium = {

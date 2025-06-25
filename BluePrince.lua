@@ -146,7 +146,7 @@ end
 
 local experiment_causes = { 'item_bought_lose_3', 'skip_booster', 'skip_blind', 'immediately', 'sell_joker_with_retrigger', 'next_5_spectral_use', 'destroy_enhanced_playing_card', 'randomly_each_round'}
 
-local experiment_effects = { 'earn_5_dollars', 'upgrade_3_hands', 'create_negative_immediately_experiment', 'create_joker', 'use_wheel_of_fortune', 'add_last_used_tarot_to_pool', '2_percent_probabilities', 'reroll_tags' }
+local experiment_effects = { 'earn_5_dollars', 'upgrade_3_hands', 'create_negative_immediately_experiment', 'create_joker', 'use_wheel_of_fortune', 'add_last_used_tarot_to_pool', '2_percent_probabilities', 'reroll_tags', 'smg_special' }
 
 SMODS.DraftJoker = SMODS.Joker:extend {
     inject = function(self)
@@ -2027,6 +2027,9 @@ function do_experiment_effect(effect)
         end
     elseif effect == 'reroll_tags' then
         reroll_skip_tags()
+    elseif effect == 'smg_special' then
+        bp_add_to_pool('j_bp_aquarium', 'Joker', 3, 3)
+        play_area_status_text('3 ' .. localize{type = 'name_text', key = 'j_bp_aquarium', set = 'Joker'} .."s have been added to the Joker Pool!")
     end
 end
 
