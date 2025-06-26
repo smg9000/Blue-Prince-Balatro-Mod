@@ -1470,7 +1470,7 @@ SMODS.DraftJoker {
         if context.other_joker then
             local index = nil
             for i = 1, #G.jokers.cards do
-                if G.jokers.cards[i] == (context.blueprint_card) then
+                if G.jokers.cards[i] == (context.blueprint_card or card) then
                     index = i
                 end
             end
