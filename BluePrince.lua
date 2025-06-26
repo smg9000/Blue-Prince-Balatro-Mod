@@ -1451,8 +1451,8 @@ SMODS.DraftJoker {
         name = "Tunnel",
         text = {
             "When {C:attention}Obtained{}, Adds {C:attention}Tunnel{} to the",
-            "{C:attention}Joker Pool{}, adjacent {C:attention}Tunnels{} give",
-            "{X:mult,C:white} X#1# {} Mult for each {C:attention}Tunnel{}",
+            "{C:green}Uncommon{} {C:attention}Joker Pool{}, adjacent",
+            "{C:attention}Tunnels{} give {X:mult,C:white} X#1# {} Mult for each {C:attention}Tunnel{}",
             "{C:inactive}(Currently {X:mult,C:white} X#2# {C:inactive} Mult)",
         }
     },
@@ -1490,7 +1490,7 @@ SMODS.DraftJoker {
     end,
     add_to_deck = function(self, card, from_debuff)
         if not from_debuff then
-            bp_add_to_pool('j_bp_tunnel', 'Joker', 1, 3)
+            bp_add_to_pool('j_bp_tunnel', 'Joker', 1, 2)
             play_area_status_text(localize{type = 'name_text', key = 'j_bp_tunnel', set = 'Joker'} .." added to Joker Pool!")
         end
     end,
