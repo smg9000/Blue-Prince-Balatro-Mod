@@ -220,6 +220,16 @@ return {
                     "{C:inactive}[and packs are face down]{}",
                     "{C:red}Sheltered!{}"
                 }
+            },
+            j_bp_chapel = {
+                name = "Chapel",
+                text = {
+                    "When earning {C:money}dollars{},",
+                    "this Joker gains {C:money}$#1#{}",
+                    "of sell value and",
+                    "{C:inactive}[Earn $#2# less]",
+                    "{C:red}Sheltered!{}"
+                }
             }
         },
         ShelteredJoker = {
@@ -248,6 +258,14 @@ return {
                 name = "Archives",
                 text = {
                     "{C:attention}+#1#{} card slot",
+                }
+            },
+            j_bp_chapel = {
+                name = "Chapel",
+                text = {
+                    "When earning {C:money}dollars{},",
+                    "this Joker gains {C:money}$#1#{}",
+                    "of sell value",
                 }
             }
         }

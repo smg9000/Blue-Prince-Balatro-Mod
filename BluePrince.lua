@@ -1213,11 +1213,6 @@ SMODS.DraftJoker {
     blueprint_compat = false,
     config = {},
     bp_include_pools = {"Draft", "Hallway"},
-    calculate = function(self, card, context)
-        if context.starting_shop and not context.blueprint then
-            G.GAME.force_jumbo_buffoon = true
-        end
-    end,
     loc_vars = function(self, info_queue, card)
         info_queue[#info_queue + 1] = G.P_CENTERS['p_buffoon_jumbo_1']
         return {vars = {}}
@@ -1494,6 +1489,224 @@ SMODS.DraftJoker {
             play_area_status_text(localize{type = 'name_text', key = 'j_bp_tunnel', set = 'Joker'} .." added to Joker Pool!")
         end
     end,
+}
+
+SMODS.DraftJoker {
+    key = 'west_wing_hall',
+    name = "West Wing Hall",
+    loc_txt = {
+        name = "West Wing Hall",
+        text = {
+            "Leftmost Joker in shop",
+            "is {C:attention}#1#%{} off",
+        }
+    },
+    atlas = 'bpjokers',
+    pos = {x = 2, y = 3},
+    rarity = 1,
+    cost = 5,
+    blueprint_compat = false,
+    config = {discount = 50},
+    bp_include_pools = {"Draft", "Hallway"}, 
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.discount}}
+    end,
+    calculate = function(self, card, context)
+        if context.reroll_shop then
+            G.E_MANAGER:add_event(Event({func = function()
+                for k, v in pairs(G.I.CARD) do
+                    if v.set_cost then v:set_cost() end
+                end
+            return true end }))
+        end
+    end,
+    add_to_deck = function(self, card, from_debuff)
+        G.E_MANAGER:add_event(Event({func = function()
+            for k, v in pairs(G.I.CARD) do
+                if v.set_cost then v:set_cost() end
+            end
+        return true end }))
+    end,
+    remove_from_deck = function(self, card, from_debuff)
+        G.E_MANAGER:add_event(Event({func = function()
+            for k, v in pairs(G.I.CARD) do
+                if v.set_cost then v:set_cost() end
+            end
+        return true end }))
+    end
+}
+
+SMODS.DraftJoker {
+    key = 'east_wing_hall',
+    name = "East Wing Hall",
+    loc_txt = {
+        name = "East Wing Hall",
+        text = {
+            "Rightmost Joker in shop",
+            "is {C:attention}#1#%{} off",
+        }
+    },
+    atlas = 'bpjokers',
+    pos = {x = 3, y = 3},
+    rarity = 1,
+    cost = 5,
+    blueprint_compat = false,
+    config = {discount = 50},
+    bp_include_pools = {"Draft", "Hallway"}, 
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.discount}}
+    end,
+    calculate = function(self, card, context)
+        if context.reroll_shop then
+            G.E_MANAGER:add_event(Event({func = function()
+                for k, v in pairs(G.I.CARD) do
+                    if v.set_cost then v:set_cost() end
+                end
+            return true end }))
+        end
+    end,
+    add_to_deck = function(self, card, from_debuff)
+        G.E_MANAGER:add_event(Event({func = function()
+            for k, v in pairs(G.I.CARD) do
+                if v.set_cost then v:set_cost() end
+            end
+        return true end }))
+    end,
+    remove_from_deck = function(self, card, from_debuff)
+        G.E_MANAGER:add_event(Event({func = function()
+            for k, v in pairs(G.I.CARD) do
+                if v.set_cost then v:set_cost() end
+            end
+        return true end }))
+    end
+}
+
+SMODS.DraftJoker {
+    key = 'chapel',
+    name = "Chapel",
+    loc_txt = {
+        name = "Chapel",
+        text = {
+            "When earning {C:money}dollars{},",
+            "this Joker gains {C:money}$#1#{}",
+            "of sell value and",
+            "Earn {C:red}$#2#{} less"
+        }
+    },
+    atlas = 'bpjokers',
+    pos = {x = 4, y = 3},
+    rarity = 1,
+    cost = 1,
+    blueprint_compat = false,
+    config = {increase = 1, donate = 1},
+    bp_include_pools = {"Draft", "Red"}, 
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.increase, card.ability.donate}}
+    end,
+    generate_ui = function(self, info_queue, card, desc_nodes, specific_vars, full_UI_table)
+        if not card then
+            card = self:create_fake_card()
+        end
+        local set = (card and card.ability and card.ability.bp_sheltered) and 'ShelteredJoker' or
+        next(SMODS.find_card('j_bp_shelter')) and (card.area ~= G.jokers) and 'MidShelteredJoker' or
+        'Joker'
+        local target = {
+            type = 'descriptions',
+            key = self.key,
+            set = set,
+            nodes = desc_nodes,
+            AUT = full_UI_table,
+            vars =
+                specific_vars or {}
+        }
+        local res = {}
+        if self.loc_vars and type(self.loc_vars) == 'function' then
+            res = self:loc_vars(info_queue, card) or {}
+            target.vars = res.vars or target.vars
+            target.key = res.key or target.key
+            target.set = res.set or target.set
+            target.scale = res.scale
+            target.text_colour = res.text_colour
+        end
+        if desc_nodes == full_UI_table.main and not full_UI_table.name then
+            full_UI_table.name = self.set == 'Enhanced' and 'temp_value' or localize { type = 'name', set = target.set, key = res.name_key or target.key, nodes = full_UI_table.name, vars = res.name_vars or target.vars or {} }
+        elseif desc_nodes ~= full_UI_table.main and not desc_nodes.name and self.set ~= 'Enhanced' then
+            desc_nodes.name = localize{type = 'name_text', key = res.name_key or target.key, set = target.set }
+        end
+        if specific_vars and specific_vars.debuffed and not res.replace_debuff then
+            target = { type = 'other', key = 'debuffed_' ..
+            (specific_vars.playing_card and 'playing_card' or 'default'), nodes = desc_nodes, AUT = full_UI_table, }
+        end
+        if res.main_start then
+            desc_nodes[#desc_nodes + 1] = res.main_start
+        end
+        localize(target)
+        if res.main_end then
+            desc_nodes[#desc_nodes + 1] = res.main_end
+        end
+        desc_nodes.background_colour = res.background_colour
+    end
+}
+
+SMODS.DraftJoker {
+    key = 'dining_room',
+    name = "Dining Room",
+    loc_txt = {
+        name = "Dining Room",
+        text = {
+            "At start of Ante {C:attention}#1#{}'s first shop,",
+            "add {C:attention}#2#{} free {C:attention}Vouchers{} to shop",
+        }
+    },
+    atlas = 'bpjokers',
+    pos = {x = 5, y = 3},
+    rarity = 2,
+    cost = 8,
+    blueprint_compat = false,
+    config = {ante = 8, vouchers = 2},
+    bp_include_pools = {"Draft", "Blue"}, 
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.ante, card.ability.vouchers}}
+    end,
+    set_ability = function(self, card, initial, delay_sprites)
+        local win_ante = G and G.GAME and G.GAME.win_ante or 8
+        if G.GAME and G.GAME.round_resets and G.GAME.round_resets.ante then
+            local extra = math.floor(G.GAME.round_resets.ante / win_ante)
+            card.ability.ante = card.ability.ante + win_ante * extra
+            card.ability.vouchers = card.ability.vouchers + extra
+        end
+    end,
+    in_pool = function(self, args)
+        local win_ante = G and G.GAME and G.GAME.win_ante or 8
+        local extra = math.floor(G.GAME.round_resets.ante / win_ante)
+        if (to_big(G.GAME.round_resets.ante - extra * win_ante) <= to_big(5)) and (to_big(G.GAME.round_resets.ante - extra * win_ante) ~= to_big(0)) then
+            return true, { allow_duplicates = false }
+        end
+        return true, { allow_duplicates = false }
+    end,
+    calculate = function(self, card, context)
+        if context.starting_shop and (to_big(G.GAME.round_resets.ante) == card.ability.ante) and not card.ability.ante_reached then
+            card.ability.ante_reached = true
+            card:juice_up()
+            for i = 1, card.ability.vouchers do
+                G.E_MANAGER:add_event(Event({
+                    trigger = 'immediate',
+                    func = function()
+                        local voucher_key = get_next_voucher_key(true)
+                        G.shop_vouchers.config.card_limit = G.shop_vouchers.config.card_limit + 1
+                        local card_ = Card(G.shop_vouchers.T.x + G.shop_vouchers.T.w/2,
+                        G.shop_vouchers.T.y, G.CARD_W, G.CARD_H, G.P_CARDS.empty, G.P_CENTERS[voucher_key],{bypass_discovery_center = true, bypass_discovery_ui = true})
+                        create_shop_card_ui(card_, 'Voucher', G.shop_vouchers)
+                        card_:start_materialize()
+                        G.shop_vouchers:emplace(card_)
+                        card_.ability.bp_force_free = true
+                        card_:set_cost()
+                        return true
+                    end
+                }))
+            end
+        end
+    end
 }
 
 function reset_archive_slots(shop, pack)
@@ -2196,6 +2409,29 @@ function get_pack(_key, _type)
         end
     end
     return old_get_pack(_key, _type)
+end
+
+local old_load = CardArea.load
+function CardArea:load(cardAreaTable)
+    old_load(self, cardAreaTable)
+    if G and (self == G.shop_jokers) then
+        G.E_MANAGER:add_event(Event({func = function()
+            for k, v in pairs(G.shop_jokers.cards) do
+                if v.set_cost then v:set_cost() end
+            end
+        return true end }))
+    end
+end
+
+local old_create_card = create_card
+function create_card(_type, area, legendary, _rarity, skip_materialize, soulable, forced_key, key_append)
+    local card = old_create_card(_type, area, legendary, _rarity, skip_materialize, soulable, forced_key, key_append)
+    if card.config and (card.config.center.key == 'j_bp_chapel') and not SMODS.bypass_create_card_edition and not card.edition then
+        local edition = poll_edition('bp_edi'..(key_append or '')..G.GAME.round_resets.ante, nil, nil, true)
+        card:set_edition(edition)
+        check_for_unlock({type = 'have_edition'})
+    end
+    return card
 end
 
 function bp_add_to_pool(key, type, amount, rarity, legendary)

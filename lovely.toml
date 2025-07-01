@@ -152,7 +152,7 @@ match_indent = true
 target = 'card.lua'
 pattern = '''ease_dollars(self.sell_cost)'''
 position = 'after'
-payload = '''
+payload = '''self.ability.bp_already_sold = true
 if (G.GAME.bp_experiment_cause == 'sell_joker_with_retrigger') and (self.ability.set == "Joker") then
     local text = G.localization.descriptions.Joker[self.config.center.key].text
     local valid = false
@@ -616,7 +616,10 @@ match_indent = true
 target = 'card.lua'
 pattern = '''if (self.ability.set == 'Planet' or (self.ability.set == 'Booster' and self.ability.name:find('Celestial'))) and #find_joker('Astronomer') > 0 then self.cost = 0 end'''
 position = 'after'
-payload = '''if (self.ability.set == 'Joker') and self.config and self.config.center.bp_include_pools and next(SMODS.find_card('j_bp_terrace')) then
+payload = '''if self.ability.bp_force_free then
+    self.cost = 0
+end
+if (self.ability.set == 'Joker') and self.config and self.config.center.bp_include_pools and next(SMODS.find_card('j_bp_terrace')) then
     local green = false
     for i = 1, #self.config.center.bp_include_pools do
         if self.config.center.bp_include_pools[i] == 'Green' then
@@ -626,6 +629,39 @@ payload = '''if (self.ability.set == 'Joker') and self.config and self.config.ce
     if green then
         self.cost = 0
     end
+end
+if (self.ability.set == 'Joker') and (self.area == G.shop_jokers) and (self.area ~= nil) then
+    local discount = 1
+    local leftmost = false
+    local rightmost = nil
+    for i = 1, #G.shop_jokers.cards do
+        if G.shop_jokers.cards[i] and G.shop_jokers.cards[i].ability and (G.shop_jokers.cards[i].ability.set == 'Joker') then
+            if G.shop_jokers.cards[i] == self then
+                leftmost = true
+            end
+            break
+        end
+    end
+    for i = 1, #G.shop_jokers.cards do
+        if G.shop_jokers.cards[i] and G.shop_jokers.cards[i].ability and (G.shop_jokers.cards[i].ability.set == 'Joker') then
+            rightmost = G.shop_jokers.cards[i]
+        end
+    end
+    if leftmost then
+        for i = 1, #G.jokers.cards do
+            if G.jokers.cards[i] and G.jokers.cards[i].config and (G.jokers.cards[i].config.center.key == 'j_bp_west_wing_hall') and not G.jokers.cards[i].debuff then
+                discount = discount * (1 - G.jokers.cards[i].ability.discount * 0.01)
+            end
+        end
+    end
+    if (rightmost == self) then        
+        for i = 1, #G.jokers.cards do
+            if G.jokers.cards[i] and G.jokers.cards[i].config and (G.jokers.cards[i].config.center.key == 'j_bp_east_wing_hall') and not G.jokers.cards[i].debuff then
+                discount = discount * (1 - G.jokers.cards[i].ability.discount * 0.01)
+            end
+        end
+    end
+    self.cost = math.max(1, math.floor(discount * self.cost))
 end'''
 match_indent = true
 
@@ -710,4 +746,40 @@ payload = '''if G.jokers and G.jokers.cards then
     end
 end
 '''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "functions/button_callbacks.lua"
+pattern = '''c1.area:remove_card(c1)'''
+position = "after"
+payload = '''if G.shop and c1.ability and (c1.ability.set == "Joker") then
+    G.E_MANAGER:add_event(Event({func = function()
+        G.E_MANAGER:add_event(Event({func = function()
+            for k, v in pairs(G.I.CARD) do
+                if v.set_cost then v:set_cost() end
+            end
+        return true end }))
+    return true end }))
+end'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "functions/common_events.lua"
+pattern = '''local dollar_UI = G.HUD:get_UIE_by_ID('dollar_text_UI')'''
+position = "after"
+payload = '''if G.jokers and (to_big(mod) > to_big(0)) then
+    for i = 1, #G.jokers.cards do
+        if G.jokers.cards[i] and G.jokers.cards[i].config and (G.jokers.cards[i].config.center.key == 'j_bp_chapel') and not G.jokers.cards[i].debuff and not G.jokers.cards[i].ability.bp_already_sold then
+            if not G.jokers.cards[i].ability.bp_sheltered then
+                mod = mod - G.jokers.cards[i].ability.donate
+            end
+            G.jokers.cards[i]:juice_up()
+            G.jokers.cards[i].ability.extra_value = G.jokers.cards[i].ability.extra_value + G.jokers.cards[i].ability.increase
+            G.jokers.cards[i]:set_cost()
+            card_eval_status_text(G.jokers.cards[i], 'jokers', nil, nil, nil, {colour = G.ARGS.LOC_COLOURS.redroom, message = '+' .. tostring(G.jokers.cards[i].ability.increase), instant = true})
+        end
+    end
+end'''
 match_indent = true
