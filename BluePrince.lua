@@ -1709,6 +1709,148 @@ SMODS.DraftJoker {
     end
 }
 
+local rumpus_room_keys = {
+    'kitchen_tip_1',
+    'lavatory_tip_1',
+    'chapel_tip_1',
+    'dining_room_tip_1',
+    'rumpus_room_tip_1',
+}
+
+SMODS.DraftJoker {
+    key = 'rumpus_room',
+    name = "Rumpus Room",
+    loc_txt = {
+        name = "Rumpus Room",
+        text = {
+            "Gives a {C:attention}note{} on a",
+            "{C:attention}hidden{} mechanic of",
+            "the {C:blue}Blue Prince{} Mod"
+        }
+    },
+    atlas = 'bpjokers',
+    pos = {x = 0, y = 4},
+    rarity = 1,
+    cost = 6,
+    blueprint_compat = false,
+    config = {},
+    bp_include_pools = {"Draft", "Blue"},
+    generate_ui = function(self, info_queue, card, desc_nodes, specific_vars, full_UI_table)
+        if card and not card.ability.note then
+            G.PROFILES[G.SETTINGS.profile].read_rumpus_room_notes = G.PROFILES[G.SETTINGS.profile].read_rumpus_room_notes or {}
+            if (card.area and card.area.config.type == 'title') then
+                local count = 0
+                for i, j in pairs(G.PROFILES[G.SETTINGS.profile].read_rumpus_room_notes) do
+                    count = count + 1
+                end
+                if count > 0 then
+                    _, card.ability.note = pseudorandom_element(G.PROFILES[G.SETTINGS.profile].read_rumpus_room_notes, pseudoseed('false_rumpus'))
+                else
+                    card.ability.note = 'no_note'
+                end
+            elseif card.area then
+                local pool = {}
+                for i = 1, #rumpus_room_keys do
+                    if not G.PROFILES[G.SETTINGS.profile].read_rumpus_room_notes[rumpus_room_keys[i]] then
+                        table.insert(pool, rumpus_room_keys[i])
+                    end
+                end
+                if #pool > 0 then
+                    card.ability.note = pseudorandom_element(pool, pseudoseed('rumpus'))
+                    G.PROFILES[G.SETTINGS.profile].read_rumpus_room_notes[card.ability.note] = true
+                    G:save_progress()
+                else
+                    card.ability.note = 'default_note'
+                end
+            else
+                card.ability.note = 'no_note'
+            end
+        end
+        if not card then
+            card = self:create_fake_card()
+        end
+        local target = {
+            type = 'descriptions',
+            key = self.key,
+            set = 'Joker',
+            nodes = desc_nodes,
+            AUT = full_UI_table,
+            vars =
+                specific_vars or {}
+        }
+        local res = {}
+        if self.loc_vars and type(self.loc_vars) == 'function' then
+            res = self:loc_vars(info_queue, card) or {}
+            target.vars = res.vars or target.vars
+            target.key = res.key or target.key
+            target.set = res.set or target.set
+            target.scale = res.scale
+            target.text_colour = res.text_colour
+        end
+        if desc_nodes == full_UI_table.main and not full_UI_table.name then
+            full_UI_table.name = self.set == 'Enhanced' and 'temp_value' or localize { type = 'name', set = target.set, key = res.name_key or target.key, nodes = full_UI_table.name, vars = res.name_vars or target.vars or {} }
+        elseif desc_nodes ~= full_UI_table.main and not desc_nodes.name and self.set ~= 'Enhanced' then
+            desc_nodes.name = localize{type = 'name_text', key = res.name_key or target.key, set = target.set }
+        end
+        if specific_vars and specific_vars.debuffed and not res.replace_debuff then
+            target = { type = 'other', key = 'debuffed_' ..
+            (specific_vars.playing_card and 'playing_card' or 'default'), nodes = desc_nodes, AUT = full_UI_table, }
+        end
+        if res.main_start then
+            desc_nodes[#desc_nodes + 1] = res.main_start
+        end
+        localize(target)
+        if (card.ability.note ~= 'no_note') and (card.area ~= G.shop_jokers) and (card.area ~= G.pack_cards) then
+            localize{type = 'descriptions', key = card.ability.note or 'default_note', set = 'RumpusRoomNotes', nodes = desc_nodes, vars = {}}
+        end
+        if res.main_end then
+            desc_nodes[#desc_nodes + 1] = res.main_end
+        end
+        desc_nodes.background_colour = res.background_colour
+    end
+}
+
+SMODS.DraftJoker {
+    key = 'den',
+    name = "Den",
+    loc_txt = {
+        name = "Den",
+        text = {
+            "Gains {C:blue}+#1#{} Chips if played hand",
+            "is during {C:attention}Small Blind{}",
+            "{C:inactive}(Currently {C:blue}+#2#{C:inactive} Chips)"
+        }
+    },
+    config = {chips = 0, mod_chips = 25},
+    atlas = 'bpjokers',
+    pos = {x = 1, y = 4},
+    rarity = 1,
+    cost = 6,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.mod_chips, card.ability.chips}}
+    end,
+    bp_include_pools = {"Draft", "Blue"},
+    calculate = function(self, card, context)
+        if context.before and not context.blueprint and (G.GAME.blind_on_deck == 'Small') then
+            card.ability.chips = card.ability.chips + card.ability.mod_chips
+            return {
+                message = localize('k_upgrade_ex'),
+                colour = G.C.CHIPS,
+                card = card
+            }
+        elseif context.joker_main then
+            return {
+                message = localize{type='variable',key='a_chips',vars={card.ability.chips}},
+                chip_mod = card.ability.chips
+            }
+        end
+    end,
+}
+
+function is_color(card, color)
+
+end
+
 function reset_archive_slots(shop, pack)
     if shop and ((G.GAME.bp_face_down_shop or 0) > 0) then
         G.GAME.bp_shop_face_down = {}
@@ -2318,6 +2460,9 @@ table.insert(SMODS.calculation_keys, 'bp_extras')
 
 local old_pool = get_current_pool
 function get_current_pool(_type, _rarity, _legendary, _append)
+    if G.GAME.modifiers and G.GAME.modifiers.estate and (_type == 'Joker') then
+        _type = 'Draft'
+    end
     bp_force_showman = true 
     bp_ignore_prescence_cards = {}
     bp_pool_rarity = nil
@@ -2381,7 +2526,7 @@ function get_current_pool(_type, _rarity, _legendary, _append)
         elseif _type == 'Planet' then pool[#pool + 1] = "c_pluto"
         elseif _type == 'Spectral' then pool[#pool + 1] = "c_incantation"
         elseif _type == 'Joker' then pool[#pool + 1] = "j_joker"
-        elseif _type == 'Draft' then pool[#pool + 1] = "j_bp_gallery"
+        elseif _type == 'Draft' then pool[#pool + 1] = "j_bp_parlor"
         elseif _type == 'Blue' then pool[#pool + 1] = "j_bp_parlor"
         elseif _type == 'Bedroom' then pool[#pool + 1] = "j_bp_bedroom"
         elseif _type == 'Red' then pool[#pool + 1] = "j_bp_lavatory"
@@ -2538,3 +2683,13 @@ function reroll_skip_tags()
         end
     end
 end
+
+SMODS.Back {
+    key = 'estate',
+    name = "Estate Deck",
+    pos = { x = 0, y = 0 },
+    -- atlas = 'decks',
+    apply = function(self)
+        G.GAME.modifiers.estate = true
+    end
+}

@@ -630,7 +630,7 @@ if (self.ability.set == 'Joker') and self.config and self.config.center.bp_inclu
         self.cost = 0
     end
 end
-if (self.ability.set == 'Joker') and (self.area == G.shop_jokers) and (self.area ~= nil) then
+if (self.ability.set == 'Joker') and (self.area == G.shop_jokers) and (self.area ~= nil) and (self.cost > 0) then
     local discount = 1
     local leftmost = false
     local rightmost = nil

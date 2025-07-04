@@ -1,7 +1,14 @@
 return {
     descriptions = {
         Back = {
-
+            b_bp_estate = {
+                name = 'Estate Deck',
+                text = {
+                    '{C:attention}Draft{} Jokers show',
+                    'up instead {C:attention}Normal',
+                    'jokers'
+                }
+            }
         },
         Other = {
             prize_stat = {
@@ -268,7 +275,52 @@ return {
                     "of sell value",
                 }
             }
-        }
+        },
+        RumpusRoomNotes = {
+            kitchen_tip_1 = {
+                text = {
+                    '{C:attention,s:0.8}Kitchen{C:inactive,s:0.8} can create {C:attention,s:0.8}Gros Michel',
+                    '{C:inactive,s:0.8}after its gone {C:attention,s:0.8}Extinct!{C:inactive,s:0.8} if',
+                    '{C:inactive,s:0.8}if runs out of {C:attention,s:0.8}Food{C:inactive,s:0.8} Jokers',
+                    '{C:inactive,s:0.8}to create.'
+                }
+            },
+            lavatory_tip_1 = {
+                text = {
+                    '{C:attention,s:0.8}Lavatory{C:inactive,s:0.8} has a special effect',
+                    '{C:inactive,s:0.8}when {C:attention,s:0.8}Shelter{C:inactive,s:0.8} removes its',
+                    '{C:inactive,s:0.8}negative effects',
+                }
+            },
+            chapel_tip_1 = {
+                text = {
+                    '{C:attention,s:0.8}Chapel{C:inactive,s:0.8} is guaranteed to',
+                    '{C:inactive,s:0.8}appear with an {C:dark_edition,s:0.8}edition',
+                }
+            },
+            dining_room_tip_1 = {
+                text = {
+                    '{C:attention,s:0.8}Dining Room{C:inactive,s:0.8} cannot appear',
+                    '{C:inactive,s:0.8}within two Antes of an Ante',
+                    '{C:inactive,s:0.8}which is a multiple of {C:attention,s:0.8}8'
+                }
+            },
+            rumpus_room_tip_1 = {
+                text = {
+                    '{C:inactive,s:0.8}You can check {C:attention,s:0.8}Rumpus Room',
+                    '{C:inactive,s:0.8}in your {C:attention,s:0.8}Collection{C:inactive,s:0.8} to',
+                    '{C:inactive,s:0.8}see notes already seen',
+                    '{C:inactive,s:0.8}on this profile'
+                }
+            },
+            default_note = {
+                text = {
+                    '{C:inactive,s:0.8}This note appears when',
+                    '{C:attention,s:0.8}Rumpus Room{C:inactive,s:0.8} has no more',
+                    '{C:inactive,s:0.8}notes to show',
+                }
+            },
+        },
     },
     misc = {
         dictionary = {
