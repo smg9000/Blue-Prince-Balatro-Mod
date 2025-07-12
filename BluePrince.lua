@@ -698,7 +698,7 @@ SMODS.DraftJoker {
                 card_eval_status_text(card, 'jokers', nil, nil, nil, {colour = G.C.RED, message = found .. '?'})
                 card.ability.all_hands = false
             end
-        elseif context.joker_main then
+        elseif context.joker_main and (card.ability.mult > 0) then
             return {
                 message = localize{type='variable',key='a_mult',vars={card.ability.mult}},
                 mult_mod = card.ability.mult
@@ -1514,7 +1514,13 @@ SMODS.DraftJoker {
         return {vars = {card.ability.discount}}
     end,
     calculate = function(self, card, context)
-        if context.reroll_shop then
+        if context.starting_shop then
+            G.E_MANAGER:add_event(Event({func = function()
+                for k, v in pairs(G.I.CARD) do
+                    if v.set_cost then v:set_cost() end
+                end
+            return true end }))
+        elseif context.reroll_shop then
             G.E_MANAGER:add_event(Event({func = function()
                 for k, v in pairs(G.I.CARD) do
                     if v.set_cost then v:set_cost() end
@@ -1559,7 +1565,13 @@ SMODS.DraftJoker {
         return {vars = {card.ability.discount}}
     end,
     calculate = function(self, card, context)
-        if context.reroll_shop then
+        if context.starting_shop then
+            G.E_MANAGER:add_event(Event({func = function()
+                for k, v in pairs(G.I.CARD) do
+                    if v.set_cost then v:set_cost() end
+                end
+            return true end }))
+        elseif context.reroll_shop then
             G.E_MANAGER:add_event(Event({func = function()
                 for k, v in pairs(G.I.CARD) do
                     if v.set_cost then v:set_cost() end
@@ -1844,7 +1856,7 @@ SMODS.DraftJoker {
                 colour = G.C.CHIPS,
                 card = card
             }
-        elseif context.joker_main then
+        elseif context.joker_main and (card.ability.chips > 0) then
             return {
                 message = localize{type='variable',key='a_chips',vars={card.ability.chips}},
                 chip_mod = card.ability.chips
@@ -1874,7 +1886,7 @@ SMODS.DraftJoker {
     end,
     bp_include_pools = {"Draft", "Blue"},
     calculate = function(self, card, context)
-        if context.joker_main then
+        if context.joker_main and (card.ability.chips > 0) then
             return {
                 message = localize{type='variable',key='a_chips',vars={card.ability.chips}},
                 chip_mod = card.ability.chips

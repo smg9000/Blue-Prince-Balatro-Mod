@@ -178,7 +178,7 @@ end
 if G.GAME.bp_bedroom and (G.GAME.bp_bedroom > 0) and not (self.config and self.config.center and (self.config.center.key == 'j_bp_bedroom')) and (self.ability.set == "Joker") then
     card_eval_status_text(self, 'jokers', nil, nil, nil, {colour = HEX("6a23a1"), message = localize('k_ex_bedroom')})
     local amt = math.min(G.GAME.bp_bedroom, G.jokers.config.card_limit - (#G.jokers.cards + G.GAME.joker_buffer) + (self.edition and self.edition.negative and 0 or 1))
-    G.GAME.joker_buffer = G.GAME.joker_buffer + 1
+    G.GAME.joker_buffer = G.GAME.joker_buffer + amt
     G.GAME.bp_bedroom = 0
     for i = 1, amt do
         G.E_MANAGER:add_event(Event({
