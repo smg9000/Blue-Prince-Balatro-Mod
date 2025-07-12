@@ -417,6 +417,7 @@ SMODS.DraftJoker {
             "{C:dark_edition}+#1#{} Joker Slot during",
             "blinds. When {C:attention}Blind{} is",
             "Selected, Create a {C:attention}Joker{}",
+            "{C:inactice}(must have room)"
         }
     },
     atlas = 'bpjokers',
@@ -1486,7 +1487,7 @@ SMODS.DraftJoker {
     end,
     add_to_deck = function(self, card, from_debuff)
         if not from_debuff then
-            bp_add_to_pool('j_bp_tunnel', 'Joker', 1, 2)
+            bp_add_to_pool('j_bp_tunnel', 'Joker', 2, 2)
             play_area_status_text(localize{type = 'name_text', key = 'j_bp_tunnel', set = 'Joker'} .." added to Joker Pool!")
         end
     end,
