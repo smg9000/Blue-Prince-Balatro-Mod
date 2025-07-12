@@ -904,6 +904,7 @@ SMODS.DraftJoker {
             "At {C:attention}end of round{}, Lose",
             "{C:red}$#1#{} and create a {C:attention}Food{}",
             "{C:attention}Joker{}",
+            "{C:inactive}(must have room)"
         }
     },
     atlas = 'bpjokers',
@@ -1445,7 +1446,7 @@ SMODS.DraftJoker {
     loc_txt = {
         name = "Tunnel",
         text = {
-            "When {C:attention}Obtained{}, Adds {C:attention}Tunnel{} to the",
+            "When {C:attention}Obtained{}, Adds {C:attention}2 Tunnels{} to the",
             "{C:green}Uncommon{} {C:attention}Joker Pool{}, adjacent",
             "{C:attention}Tunnels{} give {X:mult,C:white} X#1# {} Mult for each {C:attention}Tunnel{}",
             "{C:inactive}(Currently {X:mult,C:white} X#2# {C:inactive} Mult)",
@@ -1682,7 +1683,7 @@ SMODS.DraftJoker {
         if (to_big(G.GAME.round_resets.ante - extra * win_ante) <= to_big(5)) and (to_big(G.GAME.round_resets.ante - extra * win_ante) ~= to_big(0)) then
             return true, { allow_duplicates = false }
         end
-        return true, { allow_duplicates = false }
+        return false, { allow_duplicates = false }
     end,
     calculate = function(self, card, context)
         if context.starting_shop and (to_big(G.GAME.round_resets.ante) == card.ability.ante) and not card.ability.ante_reached then
@@ -1736,6 +1737,7 @@ SMODS.DraftJoker {
     config = {},
     bp_include_pools = {"Draft", "Blue"},
     generate_ui = function(self, info_queue, card, desc_nodes, specific_vars, full_UI_table)
+        local add_note = false
         if card and not card.ability.note then
             G.PROFILES[G.SETTINGS.profile].read_rumpus_room_notes = G.PROFILES[G.SETTINGS.profile].read_rumpus_room_notes or {}
             if (card.area and card.area.config.type == 'title') then
@@ -1757,7 +1759,7 @@ SMODS.DraftJoker {
                 end
                 if #pool > 0 then
                     card.ability.note = pseudorandom_element(pool, pseudoseed('rumpus'))
-                    G.PROFILES[G.SETTINGS.profile].read_rumpus_room_notes[card.ability.note] = true
+                    add_note = true
                     G:save_progress()
                 else
                     card.ability.note = 'default_note'
@@ -1802,6 +1804,9 @@ SMODS.DraftJoker {
         localize(target)
         if (card.ability.note ~= 'no_note') and (card.area ~= G.shop_jokers) and (card.area ~= G.pack_cards) then
             localize{type = 'descriptions', key = card.ability.note or 'default_note', set = 'RumpusRoomNotes', nodes = desc_nodes, vars = {}}
+            if add_note then
+                G.PROFILES[G.SETTINGS.profile].read_rumpus_room_notes[card.ability.note] = true
+            end
         end
         if res.main_end then
             desc_nodes[#desc_nodes + 1] = res.main_end
@@ -1839,6 +1844,36 @@ SMODS.DraftJoker {
                 card = card
             }
         elseif context.joker_main then
+            return {
+                message = localize{type='variable',key='a_chips',vars={card.ability.chips}},
+                chip_mod = card.ability.chips
+            }
+        end
+    end,
+}
+
+SMODS.DraftJoker {
+    key = 'billard_room',
+    name = "Billard Room",
+    loc_txt = {
+        name = "Billard Room",
+        text = {
+            "Gains {C:blue}+#1#{} Chips when",
+            "{C:red}+Mult{} is triggered",
+            "{C:inactive}(Currently {C:blue}+#2#{C:inactive} Chips)"
+        }
+    },
+    config = {chips = 0, mod_chips = 2},
+    atlas = 'bpjokers',
+    pos = {x = 2, y = 4},
+    rarity = 1,
+    cost = 6,
+    loc_vars = function(self, info_queue, card)
+        return {vars = {card.ability.mod_chips, card.ability.chips}}
+    end,
+    bp_include_pools = {"Draft", "Blue"},
+    calculate = function(self, card, context)
+        if context.joker_main then
             return {
                 message = localize{type='variable',key='a_chips',vars={card.ability.chips}},
                 chip_mod = card.ability.chips
@@ -2442,6 +2477,15 @@ local old_indiv_effect = SMODS.calculate_individual_effect
 function SMODS.calculate_individual_effect(effect, scored_card, key, amount, from_edition)
     local result_main = old_indiv_effect(effect, scored_card, key, amount, from_edition)
 
+    if (key == 'mult' or key == 'h_mult' or key == 'mult_mod') and amount and G.jokers then 
+        for i = 1, #G.jokers.cards do
+            if G.jokers.cards[i] and G.jokers.cards[i].config and (G.jokers.cards[i].config.center.key == 'j_bp_billard_room') and not G.jokers.cards[i].debuff and not G.jokers.cards[i].ability.bp_already_sold then
+                G.jokers.cards[i].ability.chips = G.jokers.cards[i].ability.chips + G.jokers.cards[i].ability.mod_chips
+                card_eval_status_text(G.jokers.cards[i], 'jokers', nil, nil, nil, {colour = G.C.CHIPS, message = tostring(G.jokers.cards[i].ability.chips)})
+            end
+        end
+    end
+
     if (key == 'bp_extras') and amount and (#amount > 0) then
         local result = nil
         for i = 1, #amount do
@@ -2460,7 +2504,7 @@ table.insert(SMODS.calculation_keys, 'bp_extras')
 
 local old_pool = get_current_pool
 function get_current_pool(_type, _rarity, _legendary, _append)
-    if G.GAME.modifiers and G.GAME.modifiers.estate and (_type == 'Joker') then
+    if G.GAME.modifiers and G.GAME.modifiers.estate and (_type == 'Joker') and not _legendary then
         _type = 'Draft'
     end
     bp_force_showman = true 

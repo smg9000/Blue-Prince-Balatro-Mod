@@ -267,6 +267,7 @@ target = "functions/state_events.lua"
 pattern = '''check_for_unlock({type = 'hand_contents', cards = G.play.cards})'''
 position = "after"
 payload = '''if (G.GAME.bp_experiment_cause == 'randomly_each_round') and (((G.GAME.current_round.random_activation == 'rand_hand') and (pseudorandom('rngpick') < 0.5)) or (G.GAME.current_round.random_activation == 'first_hand')) and not G.GAME.current_round.random_this_round_active then
+    G.GAME.current_round.random_this_round_active = true
     if do_pre_experiment_effect(G.GAME.bp_experiment_effect) then
         local effect = G.GAME.bp_experiment_effect
         G.E_MANAGER:add_event(Event({
